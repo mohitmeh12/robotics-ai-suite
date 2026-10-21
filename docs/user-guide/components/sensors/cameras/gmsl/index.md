@@ -13,6 +13,12 @@ modules, GMSL Add-in-Card design, and GMSL `SerDes` configuration.
 
 Follow this guide to enable a GMSL camera for your development kit.
 
+```{note}
+This guide uses the BIOS camera configuration. To describe the cameras with an
+ACPI SSDT overlay instead, follow
+[GMSL Camera Setup with ACPI SSDT Overlay](ssdt.md).
+```
+
 ### Step 1: Configure BIOS
 
 Find the GMSL guide for your specific Development Kit in the table below and complete it.
@@ -292,3 +298,9 @@ Your camera is now setup. This is a good chance to fetch a live image from your 
 Now that your GMSL camera is properly connected, you can test out using it with various samples or immediately use in your robotics solution:
 - Use OpenVINO™ to stream GMSL video data into a YOLO-based computer vision sample: [OpenVINO™ RealSense AI Demo](../../../../ai_resources/openvino/reference_applications/openvino_multicam_demo.md)
 - Use ROS 2 to ingest camera frames for use in a ROS-powered application: [RealSense ROS2 Node](../../reference_applications/realsense-ros2.md)
+
+:::{toctree}
+:hidden:
+
+GMSL Camera Setup with ACPI SSDT Overlay <ssdt>
+:::
