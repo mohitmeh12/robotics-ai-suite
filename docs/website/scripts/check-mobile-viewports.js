@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: (C) 2026 Intel Corporation
+// SPDX-License-Identifier: Apache-2.0
+
 const { chromium, firefox, webkit } = require("playwright");
 const { once } = require("node:events");
 
@@ -102,7 +105,7 @@ async function checkSite(browser, testUrl, origin) {
     }
     if (hydrated) {
       await page.waitForFunction(() => document.documentElement.getAttribute("data-has-hydrated") === "true", null, { timeout: 15000 });
-      await page.waitForFunction(() => window.__oepIncludesLoaded === true, null, { timeout: 15000 });
+      await page.waitForSelector("#footer-custom-content #recode50footer", { state: "attached", timeout: 15000 });
     } else {
       console.log(`  ✓ ${route} returned ${response.status()}\n`);
       continue;
@@ -159,6 +162,8 @@ async function checkSite(browser, testUrl, origin) {
         dispatchEvent(new PopStateEvent("popstate"));
       }, detailUrl.pathname);
       await page.waitForFunction(() => document.title.includes("act-fp16-ov"), null, { timeout: 15000 });
+      // Client navigation remounts the footer; the previous page's global loaded flag stays true.
+      await page.waitForSelector("#footer-custom-content #recode50footer", { state: "attached", timeout: 15000 });
       console.log("  ✓ /models/act-fp16-ov/ resolved through client navigation");
     }
     console.log("");
