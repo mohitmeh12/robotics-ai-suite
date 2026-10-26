@@ -1,0 +1,214 @@
+---
+# SPDX-FileCopyrightText: (C) 2026 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+# Deploys and cleans up PR preview sites built by "Deploy Website".
+# Runs from main via workflow_run so fork PRs get OIDC credentials with the
+# same identity as production deploys. The built artifact is untrusted: it is
+# only synced as static files, never executed. Fork builds only run after a
+# write-access maintainer approves them ("Approve and run workflows"), which
+# gates fork previews.
+
+name: Deploy PR Preview
+
+on:  # yamllint disable-line rule:truthy
+  # No fork code is checked out or executed; see header comment.
+  workflow_run:  # zizmor: ignore[dangerous-triggers]
+    workflows: [Deploy Website]
+    types: [completed]
+
+# Concurrency is per PR at job level: fork branches (e.g. "main") can be reused
+# across PRs, and cleanup must never be cancelled by another PR's run.
+
+env:
+  PROD_ROLE: arn:aws:iam::153402917730:role/robotics-ai-suite
+  PROD_BUCKET: s3://intel-robotics-documentation
+  CF_DISTRO: E2MELGJBQJ2G04
+  SITE_URL: https://developer.robotics.intel.com
+
+permissions: {}
+
+jobs:
+  resolve:
+    if: github.event.workflow_run.event == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: read  # look up the PR for the triggering run
+      statuses: write  # show preview progress on the PR
+    outputs:
+      action: ${{ steps.pr.outputs.action }}
+      number: ${{ steps.pr.outputs.number }}
+      head_sha: ${{ steps.pr.outputs.head_sha }}
+    steps:
+      - name: Resolve pull request
+        id: pr
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3  # v9.0.0
+        with:
+          script: |
+            // Resolve the PR from the API rather than trusting the fork's artifact.
+            const run = context.payload.workflow_run;
+            core.setOutput('action', 'none');
+            if (!run.head_repository) {
+              core.info('Head repository no longer exists; nothing to do.');
+              return;
+            }
+            const pulls = await github.paginate(github.rest.pulls.list, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'all',
+              head: `${run.head_repository.owner.login}:${run.head_branch}`,
+              per_page: 100,
+            });
+            const pr = pulls.find(p =>
+              p.head.sha === run.head_sha &&
+              p.head.repo?.full_name === run.head_repository.full_name);
+            if (!pr) {
+              core.info(`No PR with head ${run.head_sha} (stale build or unknown PR); nothing to do.`);
+              return;
+            }
+            let action = 'none';
+            if (pr.state === 'closed') {
+              action = 'cleanup';
+            } else if (run.conclusion === 'success') {
+              action = 'deploy';
+            }
+            core.info(`PR #${pr.number} (${pr.state}), build ${run.conclusion}: ${action}`);
+            core.setOutput('action', action);
+            core.setOutput('number', String(pr.number));
+            core.setOutput('head_sha', pr.head.sha);
+            if (action === 'deploy') {
+              await github.rest.repos.createCommitStatus({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                sha: pr.head.sha,
+                state: 'pending',
+                context: 'PR preview',
+                description: 'Deploying preview',
+                target_url: `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
+              });
+            }
+
+  deploy:
+    needs: resolve
+    if: needs.resolve.outputs.action == 'deploy'
+    runs-on: ubuntu-latest
+    concurrency:
+      group: pr-preview-s3-${{ needs.resolve.outputs.number }}
+      cancel-in-progress: false
+    permissions:
+      actions: read  # download the artifact from the triggering run
+      id-token: write  # OIDC role assumption for S3/CloudFront
+      contents: read
+      pull-requests: write  # post the preview link comment
+    env:
+      PR_NUMBER: ${{ needs.resolve.outputs.number }}
+      HEAD_SHA: ${{ needs.resolve.outputs.head_sha }}
+    steps:
+      - name: Confirm PR is still open
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3  # v9.0.0
+        with:
+          script: |
+            // The PR may have closed or moved on since the build finished.
+            const { data: pr } = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: Number(process.env.PR_NUMBER),
+            });
+            if (pr.state !== 'open' || pr.head.sha !== process.env.HEAD_SHA) {
+              core.setFailed(`PR #${pr.number} is ${pr.state} at ${pr.head.sha}; not deploying.`);
+            }
+
+      - name: Download website
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c  # v8.0.1
+        with:
+          name: website
+          path: site-build
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ github.token }}
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd  # v6.3.0
+        with:
+          role-to-assume: ${{ env.PROD_ROLE }}
+          role-session-name: Github
+          aws-region: us-east-1
+
+      - name: Deploy PR preview
+        run: |
+          [[ "$PR_NUMBER" =~ ^[0-9]+$ ]]
+          aws s3 sync site-build/ "${PROD_BUCKET}/pr/${PR_NUMBER}" --delete
+          aws cloudfront create-invalidation --distribution-id "$CF_DISTRO" --paths "/pr/${PR_NUMBER}/*"
+
+      - name: Comment PR with preview link
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3  # v9.0.0
+        with:
+          script: |
+            const { PR_NUMBER, HEAD_SHA, SITE_URL } = process.env;
+            const issue_number = Number(PR_NUMBER);
+            const url = `${SITE_URL}/pr/${issue_number}/index.html`;
+            const body = `Preview deployed for commit \`${HEAD_SHA}\`\n\n${url}`;
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number,
+              per_page: 100,
+            });
+            const existing = comments.find(c => c.user.type === 'Bot' && c.body.startsWith('Preview deployed for commit'));
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number,
+                body,
+              });
+            }
+
+  report:
+    needs: [resolve, deploy]
+    if: always() && needs.resolve.outputs.action == 'deploy'
+    runs-on: ubuntu-latest
+    permissions:
+      statuses: write  # finalize the PR preview status
+    steps:
+      - name: Update PR preview status
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3  # v9.0.0
+        env:
+          PR_NUMBER: ${{ needs.resolve.outputs.number }}
+          HEAD_SHA: ${{ needs.resolve.outputs.head_sha }}
+          DEPLOY_RESULT: ${{ needs.deploy.result }}
+        with:
+          script: |
+            const { PR_NUMBER, HEAD_SHA, DEPLOY_RESULT, SITE_URL } = process.env;
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const ok = DEPLOY_RESULT === 'success';
+            const description = ok ? 'Preview deployed' : `Preview deploy ${DEPLOY_RESULT}`;
+            await github.rest.repos.createCommitStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              sha: HEAD_SHA,
+              state: ok ? 'success' : 'failure',
+              context: 'PR preview',
+              description,
+              target_url: ok ? `${SITE_URL}/pr/${Number(PR_NUMBER)}/index.html` : runUrl,
+            });
+
+  cleanup:
+    needs: resolve
+    if: needs.resolve.outputs.action == 'cleanup'
+    concurrency:
+      group: pr-preview-s3-${{ needs.resolve.outputs.number }}
+      cancel-in-progress: false
+    permissions:
+      id-token: write  # OIDC role assumption for S3/CloudFront
+      contents: read
+      pull-requests: read  # confirm the PR is closed before deleting
+    uses: $/.github/workflows/cleanup-pr-previews.yaml
+    with:
+      pr-number: ${{ needs.resolve.outputs.number }}

@@ -1,0 +1,101 @@
+---
+# SPDX-FileCopyrightText: (C) 2026 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+# Removes PR preview sites from S3/CloudFront. With a PR number, cleans that
+# preview; without one, sweeps every pr/<n>/ prefix. Previews are only deleted
+# when the GitHub API reports the PR as closed.
+
+name: Cleanup PR Previews
+
+on:  # yamllint disable-line rule:truthy
+  workflow_call:
+    inputs:
+      pr-number:
+        description: PR number to clean up; empty sweeps all closed PR previews.
+        type: string
+        required: false
+        default: ''
+  workflow_dispatch:
+    inputs:
+      pr-number:
+        description: PR number to clean up; empty sweeps all closed PR previews.
+        type: string
+        required: false
+        default: ''
+  schedule:
+    - cron: '17 3 * * *'
+
+env:
+  PROD_ROLE: arn:aws:iam::153402917730:role/robotics-ai-suite
+  PROD_BUCKET: s3://intel-robotics-documentation
+  CF_DISTRO: E2MELGJBQJ2G04
+
+permissions: {}
+
+jobs:
+  cleanup:
+    # Same OIDC subject as production deploys.
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    concurrency:
+      group: pr-preview-cleanup-${{ inputs.pr-number || 'sweep' }}
+      cancel-in-progress: false
+    permissions:
+      id-token: write  # OIDC role assumption for S3/CloudFront
+      contents: read
+      pull-requests: read  # confirm PRs are closed before deleting
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd  # v6.3.0
+        with:
+          role-to-assume: ${{ env.PROD_ROLE }}
+          role-session-name: Github
+          aws-region: us-east-1
+
+      - name: Delete closed PR previews
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ inputs.pr-number }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -n "$PR_NUMBER" ]]; then
+            if [[ ! "$PR_NUMBER" =~ ^[0-9]+$ ]]; then
+              echo "::error::Invalid PR number: $PR_NUMBER"
+              exit 1
+            fi
+            candidates=("$PR_NUMBER")
+          else
+            if ! listing=$(aws s3 ls "${PROD_BUCKET}/pr/"); then
+              echo "::notice::No pr/ prefix listed (empty or listing failed)."
+              listing=""
+            fi
+            mapfile -t candidates < <(awk '$1 == "PRE" { sub("/$", "", $2); print $2 }' <<<"$listing" \
+              | grep -E '^[0-9]+$' || true)
+          fi
+          echo "Candidates: ${candidates[*]:-none}"
+
+          removed=()
+          for n in "${candidates[@]}"; do
+            if ! state=$(gh api "repos/${GITHUB_REPOSITORY}/pulls/${n}" --jq .state); then
+              echo "::warning::Could not look up PR #${n}; keeping its preview."
+              continue
+            fi
+            if [[ "$state" != "closed" ]]; then
+              echo "PR #${n} is ${state}; keeping its preview."
+              continue
+            fi
+            echo "PR #${n} is closed; deleting its preview."
+            aws s3 rm "${PROD_BUCKET}/pr/${n}" --recursive
+            removed+=("/pr/${n}/*")
+          done
+
+          if (( ${#removed[@]} == 0 )); then
+            echo "No previews removed."
+          elif (( ${#removed[@]} > 10 )); then
+            # CloudFront limits concurrent wildcard invalidation paths.
+            aws cloudfront create-invalidation --distribution-id "$CF_DISTRO" --paths "/pr/*"
+          else
+            aws cloudfront create-invalidation --distribution-id "$CF_DISTRO" --paths "${removed[@]}"
+          fi

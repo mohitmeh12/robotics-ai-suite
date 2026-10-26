@@ -11,7 +11,9 @@ This directory contains the GitHub Actions workflows for continuous integration,
 
 | Workflow | File | Triggers | Description |
 | --- | --- | --- | --- |
-| Deploy Website | [.github/workflows/deploy-website.yaml](deploy-website.yaml) | `pull_request`, `push` (`main`), `workflow_dispatch` | Builds Sphinx and Docusaurus documentation, validates routes, runs Playwright browser tests, deploys pull request preview sites to AWS S3/CloudFront, and publishes the production documentation site. |
+| Deploy Website | [.github/workflows/deploy-website.yaml](deploy-website.yaml) | `pull_request`, `push` (`main`) on `docs/**`, `Makefile`, or the workflow file; `workflow_dispatch` | Builds Sphinx and Docusaurus documentation, validates routes, runs Playwright browser tests, uploads the built site, and publishes the production documentation site. |
+| Deploy PR Preview | [.github/workflows/deploy-pr-preview.yaml](deploy-pr-preview.yaml) | `workflow_run` (`Deploy Website` completed) | Deploys pull request preview sites (including fork PRs, whose builds require maintainer approval) to AWS S3/CloudFront, comments the preview link, and calls the cleanup workflow when PRs close. |
+| Cleanup PR Previews | [.github/workflows/cleanup-pr-previews.yaml](cleanup-pr-previews.yaml) | `workflow_call`, `schedule` (nightly), `workflow_dispatch` | Deletes PR preview sites from AWS S3/CloudFront for one closed PR, or sweeps all previews of closed PRs. |
 | [Robotics] CI | [.github/workflows/robotics-workflow.yaml](robotics-workflow.yaml) | `pull_request`, `push` (`main`, `release-*`), `workflow_dispatch` | Top-level dispatcher for component CI. Triggers on changes under [src/components/README.md](../../src/components/README.md) or workflow definitions, delegating to the component orchestrator. |
 | Component CI Dispatcher | [.github/workflows/robotics-components.yaml](robotics-components.yaml) | `workflow_call` | Reusable change-detection orchestrator. Uses path filtering to selectively run checks only for modified components under [src/components/README.md](../../src/components/README.md), or all components when requested. |
 | ADBSCAN | [.github/workflows/robotics-components-adbscan.yaml](robotics-components-adbscan.yaml) | `workflow_call` | Reusable license compliance check for the ADBSCAN component. |
@@ -39,7 +41,8 @@ This directory contains the GitHub Actions workflows for continuous integration,
 - **Trigger Events**:
   - `pull_request`: On `opened`, `synchronize`, `reopened`, and `closed` events.
   - `push`: Direct pushes to the `main` branch.
-  - `workflow_dispatch`: Manual execution.
+  - `workflow_dispatch`: Manual execution (unfiltered; use it to force a rebuild).
+  - `pull_request` and `push` only run when `docs/**`, the root `Makefile`, or this workflow file change. Changes only under `src/` do not rebuild or deploy the site.
 - **Concurrency**: Grouped by workflow name and PR number or git ref (`cancel-in-progress: true`).
 - **Key Jobs**:
   1. `build`:
@@ -49,13 +52,46 @@ This directory contains the GitHub Actions workflows for continuous integration,
      - Installs Chromium via Playwright and executes website integration tests (`make test-website`).
      - Verifies route generation, asset paths, and sitemaps for pull request previews.
      - Uploads the built website as an artifact.
+  2. `pr-closed`:
+     - Runs when a pull request is `closed`. Performs no privileged work; its completion triggers preview cleanup in [deploy-pr-preview.yaml](deploy-pr-preview.yaml).
+  3. `deploy`:
+     - Runs only for `push` and `workflow_dispatch` on `main`.
+     - Deploys the built site artifact to AWS S3 using OIDC role assumption, syncing to the root bucket destination (excluding `pr/*`) and invalidating the full CloudFront cache.
+
+#### [.github/workflows/deploy-pr-preview.yaml](deploy-pr-preview.yaml)
+
+- **Name**: `Deploy PR Preview`
+- **Trigger Events**:
+  - `workflow_run`: When a `Deploy Website` run triggered by `pull_request` completes. Runs from `main`, so fork PRs get OIDC credentials with the same identity as production deploys.
+- **Fork approval**: No environment is used. Fork PR builds only run after a write-access maintainer clicks **Approve and run workflows** (repository Actions setting requiring approval for outside contributors), so every fork preview comes from an approved build. Same-repo PRs deploy automatically. If that repository setting is relaxed, fork previews deploy without approval.
+- **Concurrency**: Per PR at job level. `deploy` and `cleanup` share a non-cancelling group so cleanup always runs. `deploy` re-checks that the PR is still open at the built commit before uploading.
+- **Key Jobs**:
+  1. `resolve`:
+     - Looks up the PR through the GitHub API using the run's head repository, branch, and SHA (the build artifact is not trusted for metadata). Stale builds are ignored.
+     - Selects `cleanup` for closed PRs, `deploy` for open PRs with a successful build, otherwise does nothing.
+     - For `deploy`, sets a pending `PR preview` commit status on the PR.
   2. `deploy`:
-     - Deploys the built site artifact to AWS S3 using OIDC role assumption.
-     - **Pull requests**: Syncs to the preview directory `pr/<number>` in S3, invalidates the CloudFront cache path, and posts or updates a PR comment with the live preview link.
-     - **Main branch**: Syncs to the root bucket destination (excluding `pr/*`) and invalidates the full CloudFront cache.
-  3. `cleanup-pr-preview`:
-     - Runs when a pull request is `closed`.
-     - Deletes the corresponding preview directory `pr/<number>` from the S3 bucket and issues a CloudFront cache invalidation.
+     - Confirms the PR is still open at the built commit.
+     - Downloads the `website` artifact from the triggering run, syncs it to `pr/<number>` in S3, invalidates the CloudFront path, and posts or updates a PR comment with the preview link.
+  3. `report`:
+     - Finalizes the `PR preview` status: success linking to the preview, or failure when the deploy fails.
+  4. `cleanup`:
+     - Triggered by any closed PR, merged or not: the `closed` run of `Deploy Website` completes, and `resolve` sees the PR is closed. If a fork's `closed` run is left awaiting approval, the nightly sweep removes the preview instead.
+     - Calls [cleanup-pr-previews.yaml](cleanup-pr-previews.yaml) with the PR number.
+
+#### [.github/workflows/cleanup-pr-previews.yaml](cleanup-pr-previews.yaml)
+
+- **Name**: `Cleanup PR Previews`
+- **Trigger Events**:
+  - `workflow_call`: From `Deploy PR Preview` with a `pr-number` input when a PR closes.
+  - `schedule`: Nightly at 03:17 UTC, sweeping all previews.
+  - `workflow_dispatch`: Manual, with an optional `pr-number` (empty sweeps all previews).
+- **Behavior**:
+  - Runs only from `main`, so OIDC credentials match production deploys.
+  - With `pr-number`, checks that PR; otherwise lists every `pr/<number>/` prefix in the S3 bucket.
+  - Deletes a preview only when the GitHub API reports its PR as closed. Open PRs and failed lookups are kept.
+  - Invalidates the removed CloudFront paths (or `/pr/*` when more than 10 are removed).
+  - The nightly sweep catches previews whose cleanup was skipped, for example when a PR reverted all `docs/` changes before closing.
 
 ---
 

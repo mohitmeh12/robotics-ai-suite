@@ -5,10 +5,16 @@
 name: Deploy Website
 
 on:  # yamllint disable-line rule:truthy
+  # The site build only reads these paths; src/-only changes skip the workflow.
   pull_request:
     types: [opened, synchronize, reopened, closed]
+    paths: &website-paths
+      - docs/**
+      - Makefile
+      - .github/workflows/deploy-website.yaml
   push:
     branches: [main]
+    paths: *website-paths
   workflow_dispatch:
 
 concurrency:
@@ -19,7 +25,6 @@ env:
   PROD_ROLE: arn:aws:iam::153402917730:role/robotics-ai-suite
   PROD_BUCKET: s3://intel-robotics-documentation
   CF_DISTRO: E2MELGJBQJ2G04
-  SITE_URL: https://developer.robotics.intel.com
 
 permissions:
   contents: read
@@ -88,38 +93,27 @@ jobs:
           path: docs/website/build/
           if-no-files-found: error
 
-  cleanup-pr-preview:
+  # PR runs (including forks) have no OIDC or write token. Preview deploy and
+  # cleanup run from main in deploy-pr-preview.yaml via workflow_run.
+  pr-closed:
     if: github.event_name == 'pull_request' && github.event.action == 'closed'
     runs-on: ubuntu-latest
-    permissions:
-      id-token: write
-      contents: read
     steps:
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd  # v6.3.0
-        with:
-          role-to-assume: ${{ env.PROD_ROLE }}
-          role-session-name: Github
-          aws-region: us-east-1
-
-      - name: Delete PR preview from S3
-        run: aws s3 rm "${PROD_BUCKET}/pr/${{ github.event.number }}" --recursive
-
-      - name: Invalidate removed preview
-        run: aws cloudfront create-invalidation --distribution-id "$CF_DISTRO" --paths "/pr/${{ github.event.number }}/*"
+      - name: Hand off preview cleanup
+        env:
+          PR_NUMBER: ${{ github.event.number }}
+        run: |
+          echo "PR #${PR_NUMBER} closed; starting deploy cleanup."
 
   deploy:
     needs: build
     if: >-
-      (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
-      (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main') ||
-      (github.event_name == 'pull_request' &&
-       github.event.pull_request.head.repo.full_name == github.repository)
+      (github.event_name == 'push' || github.event_name == 'workflow_dispatch') &&
+      github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     permissions:
       id-token: write
       contents: read
-      pull-requests: write
     steps:
       - name: Download website
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c  # v8.0.1
@@ -134,43 +128,8 @@ jobs:
           role-session-name: Github
           aws-region: us-east-1
 
-      - name: Deploy PR preview
-        if: github.event_name == 'pull_request'
-        run: |
-          aws s3 sync site-build/ "${PROD_BUCKET}/pr/${{ github.event.number }}" --delete
-          aws cloudfront create-invalidation --distribution-id "$CF_DISTRO" --paths "/pr/${{ github.event.number }}/*"
-
       - name: Deploy to root
-        if: github.event_name != 'pull_request'
         run: |
           aws s3 sync site-build/ "$PROD_BUCKET" --delete --exclude "pr/*"
           aws cloudfront create-invalidation --distribution-id "$CF_DISTRO" --paths "/*"
 
-      - name: Comment PR with preview link
-        if: github.event_name == 'pull_request'
-        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3  # v9.0.0
-        with:
-          script: |
-            const url = `${{ env.SITE_URL }}/pr/${{ github.event.number }}/index.html`;
-            const body = `Preview deployed for commit \`${{ github.event.pull_request.head.sha }}\`\n\n${url}`;
-            const { data: comments } = await github.rest.issues.listComments({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.issue.number,
-            });
-            const existing = comments.find(c => c.user.type === 'Bot' && c.body.startsWith('Preview deployed for commit'));
-            if (existing) {
-              await github.rest.issues.updateComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                comment_id: existing.id,
-                body,
-              });
-            } else {
-              await github.rest.issues.createComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: context.issue.number,
-                body,
-              });
-            }
