@@ -105,6 +105,14 @@ Build and run high-performance lidar-inertial odometry and mapping.
 
 Explore whole-body control for GR00T-based humanoid robotics.
 :::
+
+:::{grid-item-card} **GDRNPP 6D Pose Estimation**
+:link: sample_pipelines/gdrnpp
+:link-type: doc
+:link-alt: clickable cards
+
+Combine YOLOX object detection and GDRN pose estimation optimized with OpenVINO™. 
+:::
 ::::
 
 
@@ -124,5 +132,6 @@ sample_pipelines/openclaw_agenticros_demo
 sample_pipelines/fast_livo2_demo
 sample_pipelines/fast_lio2_demo
 sample_pipelines/gr00t_wbc
+sample_pipelines/gdrnpp
 
 :::

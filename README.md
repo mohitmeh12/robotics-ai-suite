@@ -66,6 +66,7 @@ The per-collection reference application architectures — which zoom into a rep
 | [VSLAM: ORB-SLAM3](src/pipelines/orb-slam3-sample) | [VSLAM: ORB-SLAM3](https://developer.robotics.intel.com/development-stack/software_references/humanoid/sample_pipelines/ORB_VSLAM/) | One of the popular real-time feature-based SLAM libraries that can perform Visual, Visual-Inertial and Multi-Map SLAM with monocular, stereo and RGB-D cameras, using pin-hole and fish-eye lens models |
 | [Gr00t n1.7 (OpenVINO Toolkit)](src/pipelines/gr00t-n1d7-ov) | [Gr00t n1.7 (OpenVINO Toolkit)](https://developer.robotics.intel.com/development-stack/ai_resources/openvino/models/model_gr00t_n1d7/) | Implementation of Gr00t n1.7 VLA model optimized with the OpenVINO toolkit |
 | [GR00T-WholeBodyControl (OpenVINO Toolkit)](src/pipelines/gr00t-wbc) | [GR00T-WholeBodyControl (OpenVINO Toolkit)](https://developer.robotics.intel.com/development-stack/software_references/humanoid/sample_pipelines/gr00t_wbc/) | Implementation of GR00T-WholeBodyControl pipeline on Intel PLT platform optimized with the OpenVINO toolkit |
+| [GDRNPP 6D Pose Estimation (OpenVINO Toolkit)](src/pipelines/gdrnpp-ov) | [GDRNPP 6D Pose Estimation (OpenVINO Toolkit)](https://developer.robotics.intel.com/development-stack/software_references/humanoid/sample_pipelines/gdrnpp/) | GDRNPP object detection and 6D pose estimation pipeline optimized for Intel CPU and GPU inference with the OpenVINO toolkit |
 
 **Autonomous Mobile Robot:**
 

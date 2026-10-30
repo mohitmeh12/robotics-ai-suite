@@ -77,3 +77,7 @@
 	url = https://github.com/hku-mars/FAST_LIO.git
 	branch = ROS2
 	shallow = true
+[submodule "pipelines/gdrnpp-ov/gdrnpp"]
+	path = src/pipelines/gdrnpp-ov/gdrnpp
+	url = https://github.com/shanice-l/gdrnpp_bop2022.git
+	shallow = true

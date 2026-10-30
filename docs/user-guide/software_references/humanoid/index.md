@@ -33,6 +33,7 @@ Find supported Humanoid runtime, middleware, sensor, and pipeline packages.
 | **[VSLAM: ORB-SLAM3](sample_pipelines/ORB_VSLAM.md)** | SLAM, Perception | Feature-based visual SLAM for monocular, stereo, and RGB-D cameras. |
 | **[Robotics Diffusion Transformer (RDT)](sample_pipelines/robotics_diffusion_transformer.md)** | Foundation Model, AI | Bimanual manipulation foundation model running in MuJoCo and real ALOHA robots. |
 | **[Pi0.5 with Real-Time Chunking](sample_pipelines/pi05_with_rtc.md)** | VLA, Manipulation | Vision-Language-Action pipeline with PaliGemma VLM and flow-matching policy. |
+| **[GDRNPP 6D Pose Estimation](sample_pipelines/gdrnpp.md)** | Perception, AI | YOLOX detection and GDRN 6D object pose estimation accelerated with OpenVINO™. |
 | **[LLM Robotics Demo](sample_pipelines/llm_robotics.md)** | GenAI, Manipulation | Voice and text-commanded robot control with Phi-4 and SAM/CLIP. |
 | **[OpenClaw AgenticROS Demo](sample_pipelines/openclaw_agenticros_demo.md)** | Agentic AI, ROS 2 | Agentic ROS framework demo with OpenClaw. |
 | **[Fast-LIO2 Demo](sample_pipelines/fast_lio2_demo.md)** | LiDAR, SLAM | Fast, robust LiDAR-inertial odometry package. |
