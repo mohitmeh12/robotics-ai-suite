@@ -1,11 +1,17 @@
+```{eval-rst}
+.. meta::
+   :description: Validate mobile robot motor control with keyboard teleoperation.
+   :keywords: AMR, teleoperation, keyboard, AAEON
+```
+
 # Deploy Robot Teleop Using a Keyboard
 
-Use this software reference to validate robot motor control with a keyboard before
-deploying autonomous applications.
+Use this software reference to validate robot motor control with a keyboard before deploying
+autonomous applications.
 
 ## Prerequisites
 
-Complete the [Getting Started](../../../platform_foundation/getting_started.md) guide before continuing.
+First, complete the [Getting Started](../../../platform_foundation/getting_started.md) guide.
 
 ## Hardware Prerequisites
 
@@ -13,12 +19,13 @@ You have a robot and a keyboard or an SSH/VNC connection to the robot.
 
 ## Example for the AAEON UP Xtreme i11 Robotic Development Kit
 
-1. Connect to your robot via SSH/VNC or direct access. If you choose direct
-   access, insert a monitor and a keyboard into the robot's compute system.
+1. Connect to your robot through SSH or VNC, or use direct access. For direct access, connect
+   a monitor and keyboard to the robot's compute system.
 
-2. Set up your system by following the steps in the [Getting Started](../../../platform_foundation/getting_started.md) guide.
+2. Set up your system by following the steps in the
+   [Getting Started](../../../platform_foundation/getting_started.md) guide.
 
-3. Ensure the `ros2-amr-interface` Deb package is installed:
+3. Ensure the `ros2-amr-interface` Debian package is installed:
 
    ::::{tab-set}
    :::{tab-item} **Jazzy**
@@ -41,22 +48,23 @@ You have a robot and a keyboard or an SSH/VNC connection to the robot.
    :::
    ::::
 
-4. Open a terminal or establish a new SSH connection to your robot system in order to initiate your control node.
+4. Open a terminal on the robot or establish a new SSH connection to start the control node.
 
-   * Check the device name of the motor controller
+   - Check the motor controller device name:
 
      ```bash
      sudo dmesg | grep ttyUSB
      ```
 
-   * The output should contain the ``ch341-uart`` device providing the interface to the motor controller board.
+   - The output includes the `ch341-uart` device, which provides the interface to the motor
+     controller board. For example:
 
      ```bash
      [1452443.462213] usb 1-9: ch341-uart converter now attached to ttyUSB0
      [1452444.061111] ch341-uart ttyUSB0: ch341-uart converter now disconnected from ttyUSB0
      ```
 
-   * Ensure the AAEON node configuration file has the proper USB device configured as value of  ``port_name``.
+   - Ensure the AAEON node configuration file sets `port_name` to the correct USB device:
 
      ::::{tab-set}
      :::{tab-item} **Jazzy**
@@ -77,7 +85,7 @@ You have a robot and a keyboard or an SSH/VNC connection to the robot.
      :::
      ::::
 
-   * Start the motor control node
+   - Start the motor control node:
 
      ::::{tab-set}
      :::{tab-item} **Jazzy**
@@ -110,7 +118,8 @@ You have a robot and a keyboard or an SSH/VNC connection to the robot.
      :::
      ::::
 
-5. [Only for ROS Jazzy] Install required packages if not yet installed:
+5. [Only for Robot Operating System (ROS) Jazzy] Install the required package if it is not
+   already installed:
 
    ```bash
    sudo apt-get install ros-jazzy-teleop-twist-keyboard
@@ -137,11 +146,11 @@ You have a robot and a keyboard or an SSH/VNC connection to the robot.
    :::
    ::::
 
-   When the node starts running, it will display a list of the available keyboard commands to control the robot.
-   The available commands depend on the selected robot model.
+   When the node starts, it displays the available keyboard commands for controlling the robot.
+   The commands depend on the selected robot model.
 
 ## Troubleshooting
 
-You can stop the demo anytime by pressing ``ctrl-C``.
+You can stop the demo at any time by pressing `Ctrl+C`.
 
 For general robot issues, see the [troubleshooting guide](../../../resources/troubleshooting).

@@ -1,22 +1,45 @@
+```{eval-rst}
+.. meta::
+   :description: Software references for deploying robot teleoperation and autonomous navigation.
+   :keywords: AMR, deployment, teleoperation, wandering
+```
+
 # Deployable Robot Software Solutions
-This software reference series showcases actual real-world deployable algorithms and pipelines delivered by the Robotics AI Suite.
 
-You'll start by validating direct keyboard control of a deployed robot. Next,
-you'll learn about mapping the real world for your robot using AI Robotics Suite, to give your software real, actionable data to power navigation, safety, and critical controls systems
-Finally, you'll return to another familiar pipeline, `wandering`, to combine what you've learned about real-world sensing on a fully-featured, immediately deployable robotics pipeline.
+This software reference series showcases real-world deployable algorithms and pipelines from
+the Robotics AI Suite.
 
-## [Deploy Robot Teleop Using a Keyboard](teleop_deploy.md)
-In this software reference, you'll validate motor control on a deployed AAEON robot using
-a keyboard before moving on to autonomous workloads.
+You will learn how to:
+- validate direct keyboard control of a deployed robot,
+- map the robot's surroundings to provide real-world data for navigation, safety, and critical
+  control systems,
+- use the `wandering` pipeline, to put real-world sensing to practice, on a fully-featured
+  robotics pipeline, ready to be deployed.
 
+## Deploy Robot Teleop Using a Keyboard
 
-## [Deploying `wandering`](wandering_deploy.md)
-In this software reference, you'll deploy the `wandering` pipeline to show dynamic sensing and control working on a real-world robot, mapping and learning about the environment using a combination of sensing techniques.
+[Read to the guide](teleop_deploy.md)
+
+In this software reference, you will validate motor control on a deployed AAEON robot using a
+keyboard before moving on to autonomous workloads.
+
+## Deploying `wandering`
+
+[Read to the guide](wandering_deploy.md)
+
+In this software reference, you will deploy the `wandering` pipeline to demonstrate dynamic
+sensing and control on a real-world robot. The pipeline maps and learns about the environment
+using multiple sensing techniques.
 
 ## Next Steps
-Now that you've completed both the simulation and deployment software reference series, you're ready to start using production-grade ingredients and pipelines included with the Robotics AI Suite with your own software. Head to [Optimized Solutions](../../../components/optimized_solutions/index.md) to see all of the AMR-specific ingredients, including components powered by OpenVINO™ and OpenVINO™ Physical AI framework to add Intel accelerated AI power to your software stack.
 
+After completing the simulation and deployment software reference series, you are ready to use
+the production-grade ingredients and pipelines included with the Robotics AI Suite in your own
+software.
 
+Check out the [Optimized Solutions](../../../components/optimized_solutions/index.md) to
+explore AMR-specific ingredients, including components powered by OpenVINO™ and the
+OpenVINO™ Physical AI framework, to add AI accelerated by Intel to your software stack.
 
 :::{toctree}
 :maxdepth: 1

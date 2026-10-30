@@ -3,14 +3,15 @@
 (humanoid_embodied_troubleshooting)=
 ## Humanoid Imitation Learning
 
-1. **OpenVINO™ can't detect GPU device**
+1. **OpenVINO™ cannot detect a graphics processing unit (GPU)**
 
    ```bash
    python3 -c "from openvino import Core; ie = Core(); print(ie.available_devices)"
    ['CPU']
    ```
 
-   First, make sure you have installed the appropriate GPU firmware and driver. If you are still encountering this issue:
+   First, make sure you have installed the appropriate GPU firmware and driver. If you are still
+   encountering this issue:
 
    ```bash
    export OCL_ICD_VENDORS=/etc/OpenCL/vendors
@@ -23,7 +24,7 @@
    DRI3 not available
    ```
 
-   Please update mesa to fix this issue.
+   Update Mesa to resolve this issue:
 
    ```bash
    sudo apt update
@@ -36,7 +37,7 @@
    RuntimeError: Native API failed. Native API returns: -1102 (PI_ERROR_UNINITIALIZED) -1102 (PI_ERROR_UNINITIALIZED)
    ```
 
-   To run IPEX workloads, uninstall the Intel NPU deb packages.
+   To run IPEX workloads, uninstall the Intel NPU deb packages:
 
    ```bash
    sudo dpkg --purge --force-remove-reinstreq intel-driver-compiler-npu intel-fw-npu intel-level-zero-npu
@@ -46,7 +47,8 @@
 
    (depthanythingv2_troubleshooting)=
 
-   Please modify the following download link in the script `<Depth-Anything-ONNX_project_dir>/depth_anything_v2/config.py`.
+   In the script `<Depth-Anything-ONNX_project_dir>/depth_anything_v2/config.py`, update the
+   download link:
 
    ```python
    Encoder.vitb: {
@@ -59,9 +61,15 @@
 
    (ov_inference_troubleshooting)=
 
-   If you encounter errors when running OpenVINO™ inference of models from [OpenVINO™ Supported Models](../ai_resources/openvino/models/index.md), check the OpenVINO™ version used for model conversion and the runtime version used for inference. The OpenVINO™ version used for model conversion should be the same as the runtime version used for inference. Otherwise, unexpected errors may occur, especially if the model is converted using a newer version and the runtime is an older version.
+   If you encounter errors when running OpenVINO™ inference of models from
+   [OpenVINO™ Supported Models](../ai_resources/openvino/models/index.md), check the OpenVINO™
+   version used for model conversion and the runtime version used for inference. The OpenVINO™
+   version used for model conversion should be the same as the runtime version used for inference.
+   Otherwise, unexpected errors may occur, especially if the model is converted using a newer
+   version and the runtime is an older version.
 
-   You can check the OpenVINO™ version used for model conversion at the end of the OpenVINO™ IR file `*.xml`. For example:
+   You can check the OpenVINO™ version used for model conversion at the end of the OpenVINO™ IR
+   file `*.xml`. For example:
 
    ```xml
    ...
@@ -75,39 +83,45 @@
    ...
    ```
 
-6. **IOMMU device assigned failed when ACRN hypervisor boot up**
+6. **IOMMU device unassignment failed during ACRN hypervisor startup**
 
    ```console
    failed to unassign iommu device!
    ```
 
-   1. Check if VT-d is enabled in BIOS. Refer to the BIOS configuration in the [platform getting-started guide](../platform_foundation/getting_started.md).
+   1. Check whether VT-d is enabled in BIOS. Refer to the BIOS configuration in the
+      [platform getting-started guide](../platform_foundation/getting_started.md).
 
-   2. Please check all PCIe devices plugged in have been enabled correctly.
+   2. Check that all connected PCIe devices are enabled correctly.
 
-7. **Docker pull time out**
+7. **Docker pull timed out**
 
    (docker_proxy_troubleshooting)=
 
-   If your network environment requires proxy, please refer to the [docker documentation website](https://docs.docker.com/engine/daemon/proxy/) to configure proxy settings.
+   If your network requires a proxy, refer to the
+   [Docker documentation website](https://docs.docker.com/engine/daemon/proxy/)
+   to configure proxy settings.
 
-8. **Performance of iGPU degrade when passthrough to VM on ACRN**
+8. **iGPU performance degrades when passed through to a VM on ACRN**
 
    (ACRN_troubleshooting)=
 
-   When passthrough the iGPU to Guest VM based on ACRN, the performance of iGPU running AI models will degrade compared to the performance on native.
+   Passthrough from the iGPU to a guest VM on ACRN causes a decrese in AI model performance
+   compared to native execution.
+
 
 (rvc_troubleshooting)=
-## Stationary Robot Vision & Control
 
-1. Inference on GPU does not work?
+## Stationary Robot Vision and Control
+
+1. Inference on GPU does not work.
 
    ```bash
    sudo -E apt install clinfo
    clinfo
    ```
 
-   Verify that the GPU is part of supported platforms:
+   Verify that the GPU is supported on the platform:
 
    ```text
    Number of platforms                             1
@@ -117,10 +131,10 @@
    Platform Profile                                FULL_PROFILE
    ```
 
-2. Robot does not move?
+2. The robot does not move.
 
    First start the motion controller, then press play on the pendant.
 
-3. Robot arm does not go accurately pick up the object?
+3. Robot arm does not move accurately to pick up the object.
 
-   Check [Camera Setup and Extrinsics Registration](../hardware_blueprints/stationary_arm/ur5e-robotiq-realsense.md#camera-setup-and-extrinsics-registration)
+   Check [Camera Setup and Extrinsics Registration](../hardware_blueprints/stationary_arm/ur5e-robotiq-realsense.md#camera-setup-and-extrinsics-registration).
