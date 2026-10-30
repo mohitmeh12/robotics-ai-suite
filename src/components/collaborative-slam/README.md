@@ -587,6 +587,10 @@ Detailed subsystem and sensor fusion guides are located in the [docs](docs) fold
 - **Fast Mapping:** [docs/use_fast_mapping.md](docs/use_fast_mapping.md) covers 2D occupancy grid and 3D volumetric map generation.
 - **Remapping Mode:** [docs/remapping_mode.md](docs/remapping_mode.md) details the 2D quadrilateral region-based map update workflow.
 
+## Try It in a Canonical Workshop
+
+[workshop/](workshop/README.md) runs this component in a [Canonical Workshop](https://ubuntu.com/workshop/docs/) container (`collab-slam` on Jazzy, `collab-slam-humble` on Humble) with the host's Intel GPU and NPU passed through, installed with the Robotics AI Suite installer. See [Canonical Workshop environments](../../workshops/README.md) for the prerequisites and the other workshops.
+
 ## License
 
 `collaborative-slam` is licensed under [Apache 2.0 License](./LICENSES/Apache-2.0.txt).

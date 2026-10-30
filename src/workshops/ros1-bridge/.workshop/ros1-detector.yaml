@@ -1,0 +1,24 @@
+# Copyright (C) 2026 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+name: ros1-detector
+base: ubuntu@24.04
+sdks:
+  - name: project-proxy
+  - name: project-robotics-ai-suite
+actions:
+  # Usage: frames [width] [height]. Writes the tutorial's coco_bike.jpg as a raw RGB frame to /project/frames for the ROS 1 camera.
+  frames: |
+    W=${1:-640} H=${2:-480}
+    mkdir -p /project/frames
+    python3 -c 'import cv2, glob, sys; w, h = int(sys.argv[1]), int(sys.argv[2]); img = cv2.imread(glob.glob("/opt/ros/*/share/object_detection_tutorial/image/coco_bike.jpg")[0]); open(f"/project/frames/{w}x{h}.raw", "wb").write(cv2.cvtColor(cv2.resize(img, (w, h)), cv2.COLOR_BGR2RGB).tobytes())' $W $H
+    ls -l /project/frames/${W}x${H}.raw
+  # Usage: detect [device] [max_seconds] [rmw]. SSD on /ros1/image, JSON detections on /ros1/detections (ROS 2 domain 42).
+  # Exits 5 s after the last frame, or after max_seconds.
+  detect: |
+    source /opt/ros/*/setup.bash
+    # The suite's CYCLONEDDS_URI points to a missing file.
+    unset CYCLONEDDS_URI
+    export RMW_IMPLEMENTATION=${3:-rmw_cyclonedds_cpp} ROS_DOMAIN_ID=42
+    python3 /project/ros1_detector.py ${1:-GPU} ${2:-120}

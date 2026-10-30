@@ -1,0 +1,37 @@
+# Copyright (C) 2026 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+name: wandering
+base: ubuntu@24.04
+sdks:
+  - name: project-proxy
+  - name: project-robotics-ai-suite
+actions:
+  # Wandering + RTAB-Map in Gazebo (TurtleBot3 waffle); needs the desktop plug.
+  # Both actions stop on their own: PASS once unexplored space stops shrinking for 2 min, FAIL if a node dies.
+  simulation: |
+    python3 -c 'import ctypes as c, os; x = c.CDLL("libX11.so.6"); x.XOpenDisplay.restype = c.c_void_p; exit(not x.XOpenDisplay(os.environ.get("DISPLAY", "").encode()))' || { echo "Cannot open X display '${DISPLAY:-unset}'. Reconnect the desktop plug: workshop disconnect $(hostname)/robotics-ai-suite:desktop; workshop connect $(hostname)/robotics-ai-suite:desktop"; false; }
+    source /opt/ros/*/setup.bash
+    # Upstream /map readiness probe has no type/QoS: it exits before rtabmap advertises /map, or misses the latched map, so Nav2 never starts.
+    sed 's|"/map", "--once"|"/map", "nav_msgs/msg/OccupancyGrid", "--qos-durability", "transient_local", "--qos-reliability", "reliable", "--once"|' \
+      /opt/ros/$ROS_DISTRO/share/wandering_bringup/launch/wandering_sim.launch.py > /tmp/wandering_sim.launch.py
+    rm -f /tmp/wandering_launch.log
+    PYTHONUNBUFFERED=1 RCUTILS_LOGGING_BUFFERED_STREAM=0 QT_QPA_PLATFORM=xcb \
+      ros2 launch /tmp/wandering_sim.launch.py > /tmp/wandering_launch.log 2>&1 &
+    python3 /project/explore_monitor.py /tmp/wandering_launch.log 120 1200 && RC=0 || RC=$?
+    pkill -INT -x ros2 || true; sleep 5
+    pkill -9 -x ros2 || true; pkill -9 -x ruby || true; pkill -9 -x gzserver || true; pkill -9 -x gzclient || true; pkill -9 -x rviz2 || true; pkill -9 -f "[/]opt/ros/$ROS_DISTRO/lib" || true
+    # A plain `exit` in an action makes `workshop run` return 1.
+    (exit $RC)
+  # Documented tutorial: Gazebo + RViz2 + RTAB-Map, robot wanders and maps.
+  gazebo-tutorial: |
+    python3 -c 'import ctypes as c, os; x = c.CDLL("libX11.so.6"); x.XOpenDisplay.restype = c.c_void_p; exit(not x.XOpenDisplay(os.environ.get("DISPLAY", "").encode()))' || { echo "Cannot open X display '${DISPLAY:-unset}'. Reconnect the desktop plug: workshop disconnect $(hostname)/robotics-ai-suite:desktop; workshop connect $(hostname)/robotics-ai-suite:desktop"; false; }
+    source /opt/ros/*/setup.bash
+    rm -f /tmp/wandering_launch.log
+    PYTHONUNBUFFERED=1 RCUTILS_LOGGING_BUFFERED_STREAM=0 QT_QPA_PLATFORM=xcb \
+      ros2 launch wandering_gazebo_tutorial wandering_gazebo.launch.py > /tmp/wandering_launch.log 2>&1 &
+    python3 /project/explore_monitor.py /tmp/wandering_launch.log 120 1200 && RC=0 || RC=$?
+    pkill -INT -x ros2 || true; sleep 5
+    pkill -9 -x ros2 || true; pkill -9 -x ruby || true; pkill -9 -x gzserver || true; pkill -9 -x gzclient || true; pkill -9 -x rviz2 || true; pkill -9 -f "[/]opt/ros/$ROS_DISTRO/lib" || true
+    (exit $RC)

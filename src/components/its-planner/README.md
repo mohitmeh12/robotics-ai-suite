@@ -274,6 +274,10 @@ The Ackermann steering version of this plugin utilizes some additional parameter
 - `yaw_tolerance`: The amount (+/-) by which the heading angles of the end positions of the intermediate Dubins curves may vary, in radians. Does not apply to the final Goal heading.
 - `use_final_heading`: Whether to use the goal heading specified by the `geometry_msgs::msg::PoseStamped` message or not.
 
+## Try It in a Canonical Workshop
+
+[workshop/](workshop/README.md) runs this component in a [Canonical Workshop](https://ubuntu.com/workshop/docs/) container (`its-planner` on Jazzy, `its-planner-humble` on Humble) with the host's Intel GPU and NPU passed through, installed with the Robotics AI Suite installer. See [Canonical Workshop environments](../../workshops/README.md) for the prerequisites and the other workshops.
+
 ## License
 
 ``its-planner`` is licensed under [Apache 2.0 License](./LICENSES/Apache-2.0.txt).

@@ -1,0 +1,44 @@
+# Copyright (C) 2026 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+# Proxy settings come from proxy.env, written on the host by scripts/configure-proxy.sh from its
+# http_proxy / https_proxy / no_proxy. Without the file (direct network) this SDK changes nothing.
+# setup-base runs in the SDK's hooks/ directory, the only part of the SDK that Workshop copies in.
+ENV_FILE=$PWD/proxy.env
+[ -s "$ENV_FILE" ] || { echo "proxy: no proxy.env, using a direct connection"; exit 0; }
+. "$ENV_FILE"
+HTTP_PROXY_URL=${HTTP_PROXY_URL:-$HTTPS_PROXY_URL}
+HTTPS_PROXY_URL=${HTTPS_PROXY_URL:-$HTTP_PROXY_URL}
+NO_PROXY_LIST=${NO_PROXY_LIST:-localhost,127.0.0.0/8,10.0.0.0/8}
+[ -n "$HTTP_PROXY_URL" ] || { echo "proxy: proxy.env sets no proxy, using a direct connection"; exit 0; }
+
+cat > /etc/apt/apt.conf.d/95proxy <<EOT
+Acquire::http::Proxy "$HTTP_PROXY_URL";
+Acquire::https::Proxy "$HTTPS_PROXY_URL";
+EOT
+
+cat >> /etc/environment <<EOT
+http_proxy=$HTTP_PROXY_URL
+https_proxy=$HTTPS_PROXY_URL
+HTTP_PROXY=$HTTP_PROXY_URL
+HTTPS_PROXY=$HTTPS_PROXY_URL
+no_proxy=$NO_PROXY_LIST
+NO_PROXY=$NO_PROXY_LIST
+EOT
+
+# Workshop hooks don't source /etc/environment, so each tool needs file-based config.
+cat >> /etc/wgetrc <<EOT
+use_proxy=on
+http_proxy=$HTTP_PROXY_URL
+https_proxy=$HTTPS_PROXY_URL
+EOT
+echo "proxy = \"$HTTPS_PROXY_URL\"" > /root/.curlrc
+mkdir -p /root/.cargo
+cat > /root/.cargo/config.toml <<EOT
+[http]
+proxy = "$HTTPS_PROXY_URL"
+EOT
+# Keyserver fetches (e.g. the ros2 SDK) go through dirmngr, which ignores proxy env vars.
+mkdir -p -m 700 /root/.gnupg
+echo "http-proxy $HTTP_PROXY_URL" > /root/.gnupg/dirmngr.conf

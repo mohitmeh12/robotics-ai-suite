@@ -411,6 +411,10 @@ Detailed documentation, launch options, and hardware deployment guides are organ
 - [docs/IA-optimized-adbscan-algorithm.md](docs/IA-optimized-adbscan-algorithm.md) — Mathematical formulation of range-adaptive clustering and Intel Architecture CPU vectorization optimizations.
 - [Online Developer Guide](https://developer.robotics.intel.com/development-stack/components/optimized_solutions/adbscan-follow-me/) — Official Intel Robotics AI Suite component documentation.
 
+## Try It in a Canonical Workshop
+
+[workshop/](workshop/README.md) runs this component in a [Canonical Workshop](https://ubuntu.com/workshop/docs/) container (`adbscan` on Jazzy, `adbscan-humble` on Humble) with the host's Intel GPU and NPU passed through, installed with the Robotics AI Suite installer. See [Canonical Workshop environments](../../workshops/README.md) for the prerequisites and the other workshops.
+
 ## License
 
 `ADBSCAN` is licensed under [Apache 2.0 License](./LICENSES/Apache-2.0.txt).

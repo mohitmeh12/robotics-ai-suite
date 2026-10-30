@@ -1,0 +1,12 @@
+# Copyright (C) 2026 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+# The GPU (Level Zero) builds must be named explicitly: the generic univloc-* packages (CPU builds)
+# also "Provide" the -lze names, so ros-${ROS_DISTRO}-collab-slam-lze alone installs the CPU tracker.
+ros-${ROS_DISTRO}-univloc-tracker-lze
+ros-${ROS_DISTRO}-univloc-server-lze
+ros-${ROS_DISTRO}-univloc-slam-lze
+# GPU ORB extractor; depends on the full intel-oneapi-toolkit (about 10 GB).
+liborb-lze
+ros-${ROS_DISTRO}-cslam-tutorial-multi-camera

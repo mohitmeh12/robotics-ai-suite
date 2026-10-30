@@ -1,0 +1,9 @@
+# Copyright (C) 2026 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+# pyrealsense2-ai-demo (multicam-demo). Its Python dependencies and models are set up by the install action.
+ros-${ROS_DISTRO}-pyrealsense2-ai-demo
+# For the venv and the demo's Cython extension.
+python3-venv
+g++

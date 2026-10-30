@@ -1,0 +1,36 @@
+# Copyright (C) 2026 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+name: groundfloor-humble
+base: ubuntu@22.04
+sdks:
+  - name: project-proxy
+  - name: project-robotics-ai-suite
+actions:
+  # Segmentation on the bundled depth bag, looping, with RViz (desktop plug). Ctrl+C to stop.
+  bag-replay: |
+    python3 -c 'import ctypes as c, os; x = c.CDLL("libX11.so.6"); x.XOpenDisplay.restype = c.c_void_p; exit(not x.XOpenDisplay(os.environ.get("DISPLAY", "").encode()))' || { echo "Cannot open X display '${DISPLAY:-unset}'. Reconnect the desktop plug: workshop disconnect $(hostname)/robotics-ai-suite:desktop; workshop connect $(hostname)/robotics-ai-suite:desktop"; false; }
+    source /opt/ros/*/setup.bash
+    ros2 launch pointcloud_groundfloor_segmentation realsense_groundfloor_segmentation_launch.py > /tmp/groundfloor_launch.log 2>&1 &
+    QT_QPA_PLATFORM=xcb rviz2 -d /project/groundfloor.rviz > /tmp/groundfloor_rviz.log 2>&1 &
+    sleep 3
+    # The launch expects /camera/depth/*; the bag records aligned depth.
+    ros2 bag play /opt/ros/$ROS_DISTRO/share/bagfiles/spinning --loop \
+      --remap /camera/aligned_depth_to_color/image_raw:=/camera/depth/image_rect_raw \
+              /camera/aligned_depth_to_color/camera_info:=/camera/depth/camera_info
+  # Headless: one pass of the bag; PASS if both outputs publish and labels split into ground and obstacles.
+  bag-replay-check: |
+    source /opt/ros/*/setup.bash
+    ros2 launch pointcloud_groundfloor_segmentation realsense_groundfloor_segmentation_launch.py > /tmp/groundfloor_launch.log 2>&1 &
+    sleep 5
+    python3 /project/groundfloor_check.py 25 & CHECK=$!
+    sleep 2
+    ros2 bag play /opt/ros/$ROS_DISTRO/share/bagfiles/spinning \
+      --remap /camera/aligned_depth_to_color/image_raw:=/camera/depth/image_rect_raw \
+              /camera/aligned_depth_to_color/camera_info:=/camera/depth/camera_info > /tmp/groundfloor_bag.log 2>&1
+    wait $CHECK && RC=0 || RC=$?
+    pkill -INT -x ros2 || true; sleep 3
+    pkill -9 -x ros2 || true; pkill -9 -f "[/]opt/ros/$ROS_DISTRO/lib/pointcloud_groundfloor" || true
+    # A plain `exit` in an action makes `workshop run` return 1.
+    (exit $RC)

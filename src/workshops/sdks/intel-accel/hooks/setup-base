@@ -1,0 +1,23 @@
+# Copyright (C) 2026 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+export DEBIAN_FRONTEND=noninteractive
+apt-get update
+apt-get install -y software-properties-common
+# Ubuntu 24.04 archive drivers predate recent Intel iGPUs (e.g. Panther Lake).
+add-apt-repository -y ppa:kobuk-team/intel-graphics
+# NPU user-space driver; no priority pin so the PPA's GPU stack stays in charge.
+curl -fsSL https://eci.intel.com/repos/gpg-keys/GPG-PUB-KEY-INTEL-ECI.gpg -o /usr/share/keyrings/eci-archive-keyring.gpg
+echo "deb [signed-by=/usr/share/keyrings/eci-archive-keyring.gpg] https://amrdocs.intel.com/repos/$(. /etc/os-release && echo $VERSION_CODENAME) amr main" > /etc/apt/sources.list.d/amr.list
+apt-get update
+apt-get install -y \
+  libze1 libze-intel-gpu1 intel-opencl-icd \
+  intel-media-va-driver-non-free libvpl2 \
+  intel-level-zero-npu intel-driver-compiler-npu intel-fw-npu \
+  clinfo vainfo python3 \
+  cargo-1.91 pkg-config libudev-dev
+
+# qmassa replaces intel_gpu_top (noble's 1.28 is i915-only); needs Rust >= 1.88.
+PATH=/usr/lib/rust-1.91/bin:$PATH cargo install --locked --root /usr/local qmassa
+rm -rf /root/.cargo/registry

@@ -1,0 +1,42 @@
+# Copyright (C) 2026 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+set -e
+# Plain ROS 2 from packages.ros.org, for bases the Robotics AI Suite installer doesn't support yet (Ubuntu 26.04).
+export DEBIAN_FRONTEND=noninteractive
+set -a; . /etc/environment; set +a
+
+. /etc/os-release
+case "$VERSION_CODENAME" in
+  resolute) ROS_DISTRO=lyrical ;;
+  *) echo "ros2: unsupported base $VERSION_CODENAME (use the robotics-ai-suite SDK for 22.04 and 24.04)" >&2; exit 1 ;;
+esac
+
+KEY=/usr/share/keyrings/ros-archive-keyring.gpg
+# Retry downloads: a single proxy error (e.g. 502) otherwise aborts the launch.
+echo 'Acquire::Retries "5";' | sudo tee /etc/apt/apt.conf.d/80retries
+sudo -E apt-get update -q
+sudo -E apt-get install -y -q curl gnupg
+sudo -E curl -fsSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key -o "$KEY"
+echo "deb [signed-by=$KEY] http://packages.ros.org/ros2/ubuntu $VERSION_CODENAME main" | sudo tee /etc/apt/sources.list.d/ros2.list
+sudo -E apt-get update -q
+# Intel GPU compute runtime from the Ubuntu archive; the suite installer's kobuk-team PPA isn't needed on 26.04.
+sudo -E apt-get install -y -q ros-$ROS_DISTRO-ros-base ros-dev-tools intel-opencl-icd libze-intel-gpu1 libze1 clinfo
+
+# Component packages from the workshop's apt-packages.txt (same format as the robotics-ai-suite SDK).
+# Intel packages for a new distro may not be published yet: install what apt knows and list the rest.
+if [ -f /project/apt-packages.txt ]; then
+  AVAILABLE= MISSING=
+  for P in $(grep -vE '^[[:space:]]*(#|$)' /project/apt-packages.txt | sed "s/\${ROS_DISTRO}/$ROS_DISTRO/g" | sort -u); do
+    if [ -n "$(apt-cache policy "$P" 2>/dev/null | grep 'Candidate: [^(]')" ]; then
+      AVAILABLE="$AVAILABLE $P"
+    else
+      MISSING="$MISSING $P"
+    fi
+  done
+  [ -z "$AVAILABLE" ] || sudo -E apt-get install -y -q $AVAILABLE
+  [ -z "$MISSING" ] || echo "ros2: not available for $ROS_DISTRO, skipped:$MISSING" >&2
+fi
+
+grep -q "/opt/ros/$ROS_DISTRO/setup.bash" ~/.bashrc || echo "source /opt/ros/$ROS_DISTRO/setup.bash" >> ~/.bashrc

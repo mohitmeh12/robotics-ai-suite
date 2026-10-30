@@ -179,3 +179,8 @@ static/models/index.json
 
 
 .DS_Store
+
+# Canonical Workshop (src/workshops, src/components/*/workshop)
+.workshop.lock
+src/workshops/ros1-bridge/frames/
+src/workshops/sdks/proxy/hooks/proxy.env

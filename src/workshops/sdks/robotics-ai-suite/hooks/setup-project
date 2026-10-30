@@ -1,0 +1,36 @@
+# Copyright (C) 2026 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+set -e
+# Full Robotics AI Suite install via the official installer (Express Setup, complete profile).
+# setup-project runs after the gpu plug auto-connects, so preflight sees /dev/dri; the NPU is found via PCI sysfs.
+MARKER=/var/lib/robotics-ai-suite/installed
+
+export DEBIAN_FRONTEND=noninteractive
+set -a; . /etc/environment; set +a
+
+. /etc/os-release
+case "$VERSION_CODENAME" in
+  jammy) ROS_DISTRO=humble PROFILE=full ;;
+  noble) ROS_DISTRO=jazzy PROFILE=complete ;;
+  *) echo "robotics-ai-suite: unsupported base $VERSION_CODENAME" >&2; exit 1 ;;
+esac
+
+if [ ! -f "$MARKER" ]; then
+  cd /tmp
+  curl -fsSLO https://amrdocs.intel.com/downloads/robotics-installer
+  curl -fsSLO https://amrdocs.intel.com/downloads/robotics-installer.sha256
+  sha256sum -c robotics-installer.sha256
+  chmod +x robotics-installer
+  sudo -E ./robotics-installer --auto --profile "$PROFILE" --distro "$ROS_DISTRO" ${https_proxy:+--proxy}
+  sudo mkdir -p "$(dirname "$MARKER")" && sudo touch "$MARKER"
+fi
+
+# Component-specific packages: one per line in the workshop's apt-packages.txt (# comments allowed, ${ROS_DISTRO} expanded).
+if [ -f /project/apt-packages.txt ]; then
+  sudo -E apt-get install -y $(grep -vE '^[[:space:]]*(#|$)' /project/apt-packages.txt | sed "s/\${ROS_DISTRO}/$ROS_DISTRO/g")
+fi
+
+# sudo -E keeps HOME, so root steps leave root-owned files (e.g. ~/intel) that break OpenVINO tools.
+sudo chown -R "$(id -u):$(id -g)" "$HOME"

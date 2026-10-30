@@ -394,6 +394,10 @@ Open the /etc/default/grub file. Add the following to the **GRUB_CMDLINE_LINUX**
 
 Reboot the system.
 
+## Try It in a Canonical Workshop
+
+[workshop/](workshop/README.md) runs this component in a [Canonical Workshop](https://ubuntu.com/workshop/docs/) container (`multicam` on Jazzy, `multicam-humble` on Humble) with the host's Intel GPU and NPU passed through, installed with the Robotics AI Suite installer. See [Canonical Workshop environments](../../workshops/README.md) for the prerequisites and the other workshops.
+
 ## License
 
 `multicam-demo` is licensed under [Apache 2.0 License](./LICENSES/Apache-2.0.txt).

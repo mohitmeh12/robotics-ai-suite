@@ -1,0 +1,97 @@
+# Copyright (C) 2026 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+name: benchmark-framework-lyrical
+base: ubuntu@26.04
+sdks:
+  - name: project-proxy
+  - name: project-docker
+  - name: project-ros2
+actions:
+  # No ros-lyrical-benchmark-framework is published yet, so build it from the ros-kpi source, streamed in from the host
+  # (in src/components/ros-kpi/workshop):
+  #   git -C "$(git rev-parse --show-toplevel)" archive HEAD:src/components/ros-kpi | workshop exec benchmark-framework-lyrical -- \
+  #     sh -c 'rm -rf ~/benchmark-framework-src && mkdir ~/benchmark-framework-src && tar -x -C ~/benchmark-framework-src'
+  build-package: |
+    export DEBIAN_FRONTEND=noninteractive
+    set -a; . /etc/environment; set +a
+    source /opt/ros/*/setup.bash
+    SRC=${1:-$HOME/benchmark-framework-src}
+    [ -f "$SRC/Makefile" ] || { echo "No benchmark-framework source in $SRC (see the comment above this action)"; false; }
+    sudo -E apt-get install -y -q cmake dpkg-dev file
+    cd "$SRC"
+    # The repo has humble/ and jazzy/ changelogs only; reuse Jazzy's version for this distro.
+    D=src/benchmark-framework
+    if [ ! -f "$D/$ROS_DISTRO/debian/changelog" ]; then
+      mkdir -p "$D/$ROS_DISTRO/debian"
+      sed "1s/^ros-jazzy-/ros-$ROS_DISTRO-/" "$D/jazzy/debian/changelog" > "$D/$ROS_DISTRO/debian/changelog"
+    fi
+    make package ROS_DISTRO=$ROS_DISTRO
+    sudo -E apt-get install -y -q ./output/ros-$ROS_DISTRO-benchmark-framework_*.deb
+    dpkg-query -W ros-$ROS_DISTRO-benchmark-framework
+  # Documented setup: uv + `uv sync` in the profiler directory. The package installs it read-only under
+  # /opt/ros, and runs write sessions next to the scripts, so work from a copy in ~/benchmarking.
+  install: |
+    set -a; . /etc/environment; set +a
+    source /opt/ros/*/setup.bash
+    [ -d ~/benchmarking ] || cp -r /opt/ros/$ROS_DISTRO/benchmarking ~/benchmarking
+    command -v uv >/dev/null || [ -x ~/.local/bin/uv ] || curl -LsSf https://astral.sh/uv/install.sh | sh
+    export PATH=$HOME/.local/bin:$PATH
+    cd ~/benchmarking && uv sync
+    # Let the venv see the ROS 2 Python packages (from the profiler's `make install` notes).
+    sed -i 's/include-system-site-packages = false/include-system-site-packages = true/' .venv/pyvenv.cfg
+  # Grafana (port 30000) + Prometheus in Docker, fed live from the newest session; Ctrl+C stops the exporter.
+  dashboards: |
+    export PATH=$HOME/.local/bin:$PATH
+    source /opt/ros/*/setup.bash
+    cd ~/benchmarking
+    # Grafana's plugin installer needs internet access and stops the server when it fails; the dashboards use no plugins.
+    sed -i '/GF_INSTALL_PLUGINS/d' ~/benchmarking/docker-compose.yml
+    docker compose up -d
+    # eth0 is the workshop bridge; with Docker installed, `hostname -I` lists docker0 first.
+    echo "Grafana: http://$(ip -4 -o addr show eth0 | awk '{print $4}' | cut -d/ -f1):30000  (ROS2 KPI Dashboard)"
+    uv run python src/prometheus_exporter.py --mode live --sessions-dir monitoring_sessions --port 9092
+  dashboards-stop: |
+    cd ~/benchmarking
+    docker compose down
+  # Remote mode against another workshop: `workshop run benchmark-framework monitor-remote <workshop|ip> [seconds]`.
+  # Pair the workshops first with src/workshops/scripts/authorize-remote.sh. Grafana stays up afterwards (dashboards-stop).
+  monitor-remote: |
+    export PATH=$HOME/.local/bin:$PATH
+    source /opt/ros/*/setup.bash
+    T=${1:?usage: monitor-remote <target-workshop|ip> [seconds]}
+    IP=$(cat ~/.config/remote-targets/"$T" 2>/dev/null || echo "$T")
+    ssh -o BatchMode=yes -o ConnectTimeout=5 "workshop@$IP" true 2>/dev/null || {
+      echo "Cannot SSH to $T ($IP). Pair it (again after a rebuild) from the host:"
+      echo "  ../../../workshops/scripts/authorize-remote.sh benchmark-framework $T"
+      false
+    }
+    cd ~/benchmarking
+    # Grafana's plugin installer needs internet access and stops the server when it fails; the dashboards use no plugins.
+    sed -i '/GF_INSTALL_PLUGINS/d' ~/benchmarking/docker-compose.yml
+    docker compose up -d
+    echo "Grafana: http://$(ip -4 -o addr show eth0 | awk '{print $4}' | cut -d/ -f1):30000  (ROS2 KPI Dashboard)"
+    uv run python src/prometheus_exporter.py --mode live --sessions-dir monitoring_sessions --port 9092 > /tmp/grafana-exporter.log 2>&1 &
+    # Workshop actions run on ROS_DOMAIN_ID 0; the remote's ~/.bashrc has the installer's random ID.
+    uv run python src/monitor_stack.py --remote-ip "$IP" --remote-user workshop --ros-domain-id 0 \
+      --duration "${2:-120}" --interval 2 && RC=0 || RC=$?
+    pkill -f "[p]rometheus_exporter.py" || true
+    (exit $RC)
+  # Headless: bring up the stack, export the newest session, and confirm Prometheus scrapes it and Grafana has the dashboard.
+  dashboards-check: |
+    export PATH=$HOME/.local/bin:$PATH
+    source /opt/ros/*/setup.bash
+    cd ~/benchmarking
+    # Grafana's plugin installer needs internet access and stops the server when it fails; the dashboards use no plugins.
+    sed -i '/GF_INSTALL_PLUGINS/d' ~/benchmarking/docker-compose.yml
+    docker compose up -d
+    # Newest session (monitor-remote writes monitoring_sessions/<timestamp>).
+    S=$(find monitoring_sessions -mindepth 1 -maxdepth 2 -type d -name '20*' -printf '%T@ %p\n' 2>/dev/null | sort -rn | head -1 | cut -d' ' -f2)
+    [ -n "$S" ] || { echo "No session yet: run monitor-remote against a paired workshop first"; false; }
+    uv run python src/prometheus_exporter.py --mode file --session-dir "$S" --port 9092 > /tmp/exporter.log 2>&1 &
+    python3 /project/dashboards_check.py && RC=0 || RC=$?
+    pkill -f "[p]rometheus_exporter.py" || true
+    docker compose down
+    # A plain `exit` in an action makes `workshop run` return 1.
+    (exit $RC)

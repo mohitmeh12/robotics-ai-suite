@@ -1,0 +1,63 @@
+# Copyright (C) 2026 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+name: multicam
+base: ubuntu@24.04
+sdks:
+  - name: project-proxy
+  - name: project-robotics-ai-suite
+  - name: project-camera
+actions:
+  # RealSense cameras visible in the workshop, with the index the demo config uses as "source".
+  find-cameras: |
+    source /opt/ros/*/setup.bash
+    python3 -c 'import pyrealsense2 as rs; [print(i, d.get_info(rs.camera_info.name), d.get_info(rs.camera_info.serial_number), "USB", d.get_info(rs.camera_info.usb_type_descriptor)) for i, d in enumerate(rs.context().devices)]'
+  # The package ships sources only: create its venv, install the Python dependencies,
+  # build the Cython extension and convert the YOLOv8 models (a few minutes).
+  install: |
+    set -a; . /etc/environment; set +a
+    source /opt/ros/*/setup.bash
+    A=/opt/ros/$ROS_DISTRO/share/pyrealsense2-ai-demo
+    # Reuse the suite's OpenVINO, OpenCV, numpy and pyrealsense2.
+    rm -rf $A/venv && python3 -m venv --system-site-packages $A/venv
+    . $A/venv/bin/activate
+    pip install -q --upgrade pip
+    # CPU-only torch; the default wheel pulls several GB of CUDA libraries.
+    pip install -q torch --index-url https://download.pytorch.org/whl/cpu
+    # The package's requirements.txt (pins the oneMKL 2025.3 wheels dpnp 0.16 is built against), minus what the
+    # suite provides and ultralytics, which it pins to 8.0.0 while pyproject.toml asks for >=8.0.20.
+    grep -vE "^(openvino|opencv-python|pyrealsense2|ultralytics)" $A/requirements.txt > /tmp/aidemo-req.txt
+    # dpnp 0.16 needs dpctl.tensor (removed after dpctl 0.19) and libsycl.so.8 (the 2025.3 SYCL runtime).
+    pip install -q -r /tmp/aidemo-req.txt "ultralytics>=8.0.20,<9" "dpctl==0.19.0" "intel-sycl-rt==2025.3.*" "dpcpp-cpp-rt==2025.3.*"
+    # The dpnp wheel's RPATH points at its build machine, so the SYCL/MKL libraries in venv/lib aren't found.
+    echo "export LD_LIBRARY_PATH=$A/venv/lib:$(ls -d $A/venv/lib/python3*/site-packages/dpctl)\${LD_LIBRARY_PATH:+:\$LD_LIBRARY_PATH}" >> $A/venv/bin/activate
+    # numpy 1.x's distutils hooks need the stdlib distutils (Python < 3.12); setuptools 74+ no longer provides msvccompiler.
+    python -c 'import sys; sys.exit(sys.version_info >= (3, 12))' && export SETUPTOOLS_USE_DISTUTILS=stdlib
+    cd $A/src && python setup.py -q build_ext --inplace
+    mkdir -p $A/models/yolov8/FP16 && cd $A/models/yolov8
+    for m in yolov8n yolov8n-seg; do
+      python $A/src/mo.py --model=$m.pt --data_type=FP16
+      mv ${m}_openvino_model/*.xml ${m}_openvino_model/*.bin FP16/ && rm -rf ${m}_openvino_model $m.pt
+    done
+    ls -l $A/models/yolov8/FP16
+  # Both cameras side by side with detections (cam0) and segmentation (cam1) on the GPU. q or Esc to quit.
+  demo: |
+    python3 -c 'import ctypes as c, os; x = c.CDLL("libX11.so.6"); x.XOpenDisplay.restype = c.c_void_p; exit(not x.XOpenDisplay(os.environ.get("DISPLAY", "").encode()))' || { echo "Cannot open X display '${DISPLAY:-unset}'. Reconnect the desktop plug: workshop disconnect $(hostname)/robotics-ai-suite:desktop; workshop connect $(hostname)/robotics-ai-suite:desktop"; false; }
+    source /opt/ros/*/setup.bash
+    A=/opt/ros/$ROS_DISTRO/share/pyrealsense2-ai-demo
+    . $A/venv/bin/activate
+    cd $A/src && python pyrealsense2_ai_demo_launcher.py --config=/project/config/two-cameras.json
+  # Headless for [seconds] (default 30): PASS if every configured camera reached 10 inference frames/s.
+  demo-check: |
+    source /opt/ros/*/setup.bash
+    A=/opt/ros/$ROS_DISTRO/share/pyrealsense2-ai-demo
+    . $A/venv/bin/activate
+    # The launcher crashes (Jazzy) or hangs (Humble) while exiting after printing its summary, so time-box it and judge the summary.
+    cd $A/src && timeout -s KILL $(( ${1:-30} + 60 )) python pyrealsense2_ai_demo_launcher.py --config=/project/config/two-cameras.json --duration ${1:-30} > /tmp/demo-check.log 2>&1 && RC=0 || RC=$?
+    [ $RC -eq 139 ] && echo "(launcher exited with a segfault after its summary; known issue)"
+    [ $RC -eq 137 ] && echo "(launcher hung while exiting and was killed; known issue)"
+    grep -E "^cam\[" /tmp/demo-check.log
+    N=$(python3 -c 'import json; print(len(json.load(open("/project/config/two-cameras.json"))))')
+    OK=$(grep -cE "^cam\[[0-9]+\].*infer_fps=([1-9][0-9]+)\." /tmp/demo-check.log)
+    [ "$OK" -eq "$N" ] && echo "PASS: $OK/$N cameras" || { echo "FAIL: $OK/$N cameras at 10+ inference fps (log: /tmp/demo-check.log)"; false; }

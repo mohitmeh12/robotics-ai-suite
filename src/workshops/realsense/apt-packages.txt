@@ -1,0 +1,8 @@
+# Copyright (C) 2026 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+ros-${ROS_DISTRO}-realsense2-tutorial-demo
+# rs-enumerate-devices, built against the same librealsense as the ROS driver.
+ros-${ROS_DISTRO}-librealsense2-tools
+v4l-utils

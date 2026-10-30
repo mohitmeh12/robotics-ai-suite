@@ -1,0 +1,22 @@
+# Copyright (C) 2026 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+set -e
+# Docker inside the Workshop container; Workshop already sets security.nesting on its LXD instances.
+export DEBIAN_FRONTEND=noninteractive
+set -a; . /etc/environment; set +a
+
+apt-get update -q
+apt-get install -y -q docker.io docker-compose-v2
+
+if [ -n "${https_proxy:-}${http_proxy:-}" ]; then
+  mkdir -p /etc/systemd/system/docker.service.d
+  cat > /etc/systemd/system/docker.service.d/proxy.conf <<EOF
+[Service]
+Environment="HTTP_PROXY=${http_proxy:-}" "HTTPS_PROXY=${https_proxy:-}" "NO_PROXY=${no_proxy:-}"
+EOF
+  systemctl daemon-reload
+fi
+systemctl enable docker
+systemctl restart docker

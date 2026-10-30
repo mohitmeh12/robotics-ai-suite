@@ -1,0 +1,12 @@
+# Copyright (C) 2026 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+name: intel-accel
+plugs:
+  gpu:
+    interface: gpu
+  # NPU (/dev/accel/accel*); custom-device plugs never auto-connect.
+  npu:
+    interface: custom-device
+    subsystem: accel

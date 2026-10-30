@@ -1,0 +1,49 @@
+# Copyright (C) 2026 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+name: its-planner-humble
+base: ubuntu@22.04
+sdks:
+  - name: project-proxy
+  - name: project-robotics-ai-suite
+actions:
+  # Documented tutorial: TurtleBot3 in Gazebo + Nav2 with the ITS global planner; needs the desktop plug.
+  # In RViz: "2D Pose Estimate" on the robot, then "Nav2 Goal".
+  simulation: |
+    python3 -c 'import ctypes as c, os; x = c.CDLL("libX11.so.6"); x.XOpenDisplay.restype = c.c_void_p; exit(not x.XOpenDisplay(os.environ.get("DISPLAY", "").encode()))' || { echo "Cannot open X display '${DISPLAY:-unset}'. Reconnect the desktop plug: workshop disconnect $(hostname)/robotics-ai-suite:desktop; workshop connect $(hostname)/robotics-ai-suite:desktop"; false; }
+    source /opt/ros/*/setup.bash
+    export TURTLEBOT3_MODEL=waffle
+    export GZ_SIM_RESOURCE_PATH=$GZ_SIM_RESOURCE_PATH:/opt/ros/$ROS_DISTRO/share/turtlebot3_gazebo/models
+    export GAZEBO_MODEL_PATH=$GAZEBO_MODEL_PATH:/opt/ros/$ROS_DISTRO/share/turtlebot3_gazebo/models
+    # Gazebo Classic (Humble) otherwise spends ~50 s on the online model DB and the robot spawn times out.
+    export GAZEBO_MODEL_DATABASE_URI=
+    # The planner writes road_map.txt to the working directory.
+    mkdir -p ~/its_planner && cd ~/its_planner
+    QT_QPA_PLATFORM=xcb ros2 launch its_planner its_differential_launch.py use_sim_time:=true
+  simulation-ackermann: |
+    python3 -c 'import ctypes as c, os; x = c.CDLL("libX11.so.6"); x.XOpenDisplay.restype = c.c_void_p; exit(not x.XOpenDisplay(os.environ.get("DISPLAY", "").encode()))' || { echo "Cannot open X display '${DISPLAY:-unset}'. Reconnect the desktop plug: workshop disconnect $(hostname)/robotics-ai-suite:desktop; workshop connect $(hostname)/robotics-ai-suite:desktop"; false; }
+    source /opt/ros/*/setup.bash
+    export TURTLEBOT3_MODEL=waffle
+    export GZ_SIM_RESOURCE_PATH=$GZ_SIM_RESOURCE_PATH:/opt/ros/$ROS_DISTRO/share/turtlebot3_gazebo/models
+    export GAZEBO_MODEL_PATH=$GAZEBO_MODEL_PATH:/opt/ros/$ROS_DISTRO/share/turtlebot3_gazebo/models
+    export GAZEBO_MODEL_DATABASE_URI=
+    mkdir -p ~/its_planner && cd ~/its_planner
+    QT_QPA_PLATFORM=xcb ros2 launch its_planner its_ackermann_launch.py use_sim_time:=true
+  # Headless: same Nav2 stack, sets the spawn pose, asks the ITS planner for a path, and reports it.
+  plan-check: |
+    source /opt/ros/*/setup.bash
+    export TURTLEBOT3_MODEL=waffle
+    export GZ_SIM_RESOURCE_PATH=$GZ_SIM_RESOURCE_PATH:/opt/ros/$ROS_DISTRO/share/turtlebot3_gazebo/models
+    export GAZEBO_MODEL_PATH=$GAZEBO_MODEL_PATH:/opt/ros/$ROS_DISTRO/share/turtlebot3_gazebo/models
+    export GAZEBO_MODEL_DATABASE_URI=
+    mkdir -p ~/its_planner && cd ~/its_planner
+    S=/opt/ros/$ROS_DISTRO/share/its_planner
+    ros2 launch nav2_bringup tb3_simulation_launch.py headless:=True use_rviz:=False \
+      params_file:=$S/nav2_params_$ROS_DISTRO.yaml default_bt_xml_filename:=$S/navigate_w_recovery_$ROS_DISTRO.xml \
+      > /tmp/its_plan_check.log 2>&1 &
+    python3 /project/plan_check.py || true
+    grep -m1 -E "Created global planner plugin GridBased" /tmp/its_plan_check.log || true
+    pkill -INT -x ros2 || true; sleep 5
+    pkill -9 -x ros2 || true; pkill -9 -x ruby || true; pkill -9 -x gzserver || true; pkill -9 -x gzclient || true
+    pkill -9 -f "[/]opt/ros/$ROS_DISTRO/lib" || true

@@ -1,0 +1,62 @@
+# Copyright (C) 2026 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+name: object-detection
+base: ubuntu@24.04
+sdks:
+  - name: project-proxy
+  - name: project-robotics-ai-suite
+actions:
+  # Rebuild openvino_wrapper_lib with the SSD NPU fix (patches/ssd-npu-fix.patch) as an overlay in ~/ov_ws.
+  build-npu-fix: |
+    set -a; . /etc/environment; set +a
+    sudo -E DEBIAN_FRONTEND=noninteractive apt-get install -y g++ python3-colcon-common-extensions
+    rm -rf ~/ov_ws && mkdir -p ~/ov_ws/src/ros2_openvino_toolkit && cd ~/ov_ws/src/ros2_openvino_toolkit
+    git init -q
+    # ros2 branch head, which matches the packaged ros-<distro>-openvino-wrapper-lib (Jazzy and Humble) 2025.3.0-0~0.11.0eci10.
+    git fetch -q --depth 1 https://github.com/intel/ros2_openvino_toolkit.git 663b62e153452c4e9afda9387eb7882a39551951
+    git checkout -q FETCH_HEAD
+    git apply /project/patches/ssd-npu-fix.patch
+    cd ~/ov_ws && source /opt/ros/*/setup.bash
+    colcon build --packages-select openvino_wrapper_lib --cmake-args -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF
+  ros-object-detection-cpu: |
+    python3 -c 'import ctypes as c, os; x = c.CDLL("libX11.so.6"); x.XOpenDisplay.restype = c.c_void_p; exit(not x.XOpenDisplay(os.environ.get("DISPLAY", "").encode()))' || { echo "Cannot open X display '${DISPLAY:-unset}'. Reconnect the desktop plug: workshop disconnect $(hostname)/robotics-ai-suite:desktop; workshop connect $(hostname)/robotics-ai-suite:desktop"; false; }
+    source /opt/ros/*/setup.bash
+    if [ -f ~/ov_ws/install/setup.bash ]; then source ~/ov_ws/install/setup.bash; fi
+    QT_QPA_PLATFORM=xcb ros2 launch object_detection_tutorial openvino_object_detection.launch.py device:=CPU
+  ros-object-detection-gpu: |
+    python3 -c 'import ctypes as c, os; x = c.CDLL("libX11.so.6"); x.XOpenDisplay.restype = c.c_void_p; exit(not x.XOpenDisplay(os.environ.get("DISPLAY", "").encode()))' || { echo "Cannot open X display '${DISPLAY:-unset}'. Reconnect the desktop plug: workshop disconnect $(hostname)/robotics-ai-suite:desktop; workshop connect $(hostname)/robotics-ai-suite:desktop"; false; }
+    source /opt/ros/*/setup.bash
+    if [ -f ~/ov_ws/install/setup.bash ]; then source ~/ov_ws/install/setup.bash; fi
+    QT_QPA_PLATFORM=xcb ros2 launch object_detection_tutorial openvino_object_detection.launch.py device:=GPU
+  ros-object-detection-npu: |
+    python3 -c 'import ctypes as c, os; x = c.CDLL("libX11.so.6"); x.XOpenDisplay.restype = c.c_void_p; exit(not x.XOpenDisplay(os.environ.get("DISPLAY", "").encode()))' || { echo "Cannot open X display '${DISPLAY:-unset}'. Reconnect the desktop plug: workshop disconnect $(hostname)/robotics-ai-suite:desktop; workshop connect $(hostname)/robotics-ai-suite:desktop"; false; }
+    source /opt/ros/*/setup.bash
+    if [ -f ~/ov_ws/install/setup.bash ]; then source ~/ov_ws/install/setup.bash; fi
+    QT_QPA_PLATFORM=xcb ros2 launch object_detection_tutorial openvino_object_detection.launch.py device:=NPU
+  # Inference-only latency for the model the ROS node loads; npu_busy_time_us proves NPU work.
+  benchmark: |
+    M=/opt/openvino_toolkit/models/convert/public/ssdlite_mobilenet_v2/FP16/ssdlite_mobilenet_v2.xml
+    NPU_BUSY=/sys/class/accel/accel0/device/npu_busy_time_us
+    for D in CPU GPU NPU; do
+      echo "== $D"
+      B0=$(cat $NPU_BUSY 2>/dev/null || echo 0)
+      benchmark_app -m $M -d $D -hint latency -t 10 2>&1 | grep -E "EXECUTION_DEVICES|Median:|Throughput:"
+      echo "npu_busy_time_us delta: $(( $(cat $NPU_BUSY 2>/dev/null || echo 0) - B0 ))"
+    done
+  # End-to-end rate of the tutorial pipeline, headless; drops the RViz output (Humble's OpenCV opens a GTK window for it).
+  benchmark-ros: |
+    source /opt/ros/*/setup.bash
+    if [ -f ~/ov_ws/install/setup.bash ]; then source ~/ov_ws/install/setup.bash; fi
+    echo "wrapper lib: $(ldd /opt/ros/$ROS_DISTRO/lib/openvino_node/pipeline_with_params | grep -oP '(?<=libopenvino_wrapper_lib.so => )\S+')"
+    export LD_PRELOAD=/opt/ros/$ROS_DISTRO/lib/libfastcdr.so:/opt/ros/$ROS_DISTRO/lib/libfastrtps.so QT_QPA_PLATFORM=offscreen
+    SHARE=/opt/ros/$ROS_DISTRO/share/object_detection_tutorial
+    for D in CPU GPU NPU; do
+      echo "== $D"
+      sed -e "s/{device}/$D/" -e "s/{ros_distro}/$ROS_DISTRO/g" -e "s/, RViz\]/]/" $SHARE/param/object_detection_pipeline.yaml > /tmp/od-$D.yaml
+      ros2 run openvino_node pipeline_with_params -config /tmp/od-$D.yaml > /tmp/od-$D.log 2>&1 &
+      sleep 10
+      timeout 12 ros2 topic hz /openvino_toolkit/object/detected_objects | grep "average rate" | tail -1 || true
+      pkill -INT -x pipeline_with_p || true; sleep 2; pkill -9 -x pipeline_with_p || true
+    done

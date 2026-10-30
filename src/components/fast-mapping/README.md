@@ -370,6 +370,10 @@ The repository includes Makefile targets for linting and compliance:
 
 ---
 
+## Try It in a Canonical Workshop
+
+[workshop/](workshop/README.md) runs this component in a [Canonical Workshop](https://ubuntu.com/workshop/docs/) container (`fast-mapping` on Jazzy, `fast-mapping-humble` on Humble) with the host's Intel GPU and NPU passed through, installed with the Robotics AI Suite installer. See [Canonical Workshop environments](../../workshops/README.md) for the prerequisites and the other workshops.
+
 ## License
 
 `fast_mapping` is licensed under the [Apache 2.0 License](LICENSES/Apache-2.0.txt).

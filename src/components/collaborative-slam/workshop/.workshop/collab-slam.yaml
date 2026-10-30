@@ -1,0 +1,26 @@
+# Copyright (C) 2026 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+name: collab-slam
+base: ubuntu@24.04
+sdks:
+  - name: project-proxy
+  - name: project-robotics-ai-suite
+actions:
+  # SYCL devices through Level Zero; the GPU must be listed for the GPU tracker.
+  check-gpu: |
+    source /opt/intel/oneapi/setvars.sh > /dev/null
+    ls -l /dev/dri
+    sycl-ls
+  # Documented multi-camera tutorial: two GPU trackers + UKF fusion on the bundled bag, with RViz.
+  tutorial: |
+    python3 -c 'import ctypes as c, os; x = c.CDLL("libX11.so.6"); x.XOpenDisplay.restype = c.c_void_p; exit(not x.XOpenDisplay(os.environ.get("DISPLAY", "").encode()))' || { echo "Cannot open X display '${DISPLAY:-unset}'. Reconnect the desktop plug: workshop disconnect $(hostname)/robotics-ai-suite:desktop; workshop connect $(hostname)/robotics-ai-suite:desktop"; false; }
+    source /opt/ros/*/setup.bash
+    # libur_adapter_level_zero needs oneAPI's libumf, which isn't on the linker path.
+    export LD_LIBRARY_PATH=$(ls -d /opt/intel/oneapi/umf/*/lib | tail -1)${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}
+    cd /opt/ros/$ROS_DISTRO/share/collab-slam/tutorial-multi-camera
+    QT_QPA_PLATFORM=xcb bash ./cslam-multi-camera.sh
+  # Headless: PASS if both trackers publish poses, the fused odometry is produced and the trackers use the GPU.
+  tracker-check: |
+    bash /project/tracker_check.sh

@@ -167,6 +167,10 @@ The YOLOv8 application provides state-of-the-art object detection using the YOLO
 
 For detailed usage instructions, see the [YOLOv8 OpenVINO Tutorial documentation](https://developer.robotics.intel.com/development-stack/ai_resources/openvino/reference_applications/yolov8_openvino_tutorial/).
 
+## Try It in a Canonical Workshop
+
+[workshop/](workshop/README.md) runs this component in a [Canonical Workshop](https://ubuntu.com/workshop/docs/) container (`object-detection` on Jazzy, `object-detection-humble` on Humble) with the host's Intel GPU and NPU passed through, installed with the Robotics AI Suite installer. See [Canonical Workshop environments](../../workshops/README.md) for the prerequisites and the other workshops.
+
 ## License
 
 OpenVINO Vision Applications is licensed under [Apache 2.0 License](./LICENSES/Apache-2.0.txt).

@@ -1,0 +1,84 @@
+# Copyright (C) 2026 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+name: accel-check
+base: ubuntu@24.04
+sdks:
+  - name: project-proxy
+  - name: project-intel-accel
+actions:
+  check-devices: |
+    set -x
+    id
+    ls -l /dev/dri /dev/accel
+    ls /sys/class/accel
+  check-gpu: |
+    clinfo -l
+    vainfo --display drm --device /dev/dri/renderD128
+  # Opens each node as the workshop user and reads its kernel driver name (DRM_IOCTL_VERSION).
+  check-open: |
+    python3 - <<'EOF'
+    import ctypes, fcntl, glob, os
+    class DrmVersion(ctypes.Structure):
+        _fields_ = [("major", ctypes.c_int), ("minor", ctypes.c_int), ("patch", ctypes.c_int),
+                    ("name_len", ctypes.c_size_t), ("name", ctypes.c_char_p),
+                    ("date_len", ctypes.c_size_t), ("date", ctypes.c_char_p),
+                    ("desc_len", ctypes.c_size_t), ("desc", ctypes.c_char_p)]
+    for dev in sorted(glob.glob("/dev/dri/renderD*") + glob.glob("/dev/accel/accel*")):
+        try:
+            fd = os.open(dev, os.O_RDWR)
+        except OSError as e:
+            print(f"{dev}: open FAILED ({e.strerror})")
+            continue
+        buf = ctypes.create_string_buffer(64)
+        v = DrmVersion(name_len=64, name=ctypes.cast(buf, ctypes.c_char_p))
+        fcntl.ioctl(fd, 0xC0406400, v)
+        os.close(fd)
+        print(f"{dev}: open OK, driver={buf.value.decode()} v{v.major}.{v.minor}.{v.patch}")
+    EOF
+  # Enumerates GPU and NPU through the Level Zero loader, independent of OpenVINO.
+  check-level-zero: |
+    python3 - <<'EOF'
+    import ctypes
+    ze = ctypes.CDLL("libze_loader.so.1")
+    class Props(ctypes.Structure):
+        _fields_ = [("stype", ctypes.c_uint32), ("pNext", ctypes.c_void_p),
+                    ("type", ctypes.c_uint32), ("vendorId", ctypes.c_uint32),
+                    ("deviceId", ctypes.c_uint32), ("flags", ctypes.c_uint32),
+                    ("subdeviceId", ctypes.c_uint32), ("coreClockRate", ctypes.c_uint32),
+                    ("maxMemAllocSize", ctypes.c_uint64), ("_u32x8", ctypes.c_uint32 * 8),
+                    ("timerResolution", ctypes.c_uint64), ("_u32x2", ctypes.c_uint32 * 2),
+                    ("uuid", ctypes.c_uint8 * 16), ("name", ctypes.c_char * 256)]
+    types = {1: "GPU", 2: "CPU", 3: "FPGA", 4: "MCA", 5: "NPU"}
+    rc = ze.zeInit(0)
+    assert rc == 0, f"zeInit failed: {rc:#x}"
+    n = ctypes.c_uint32(0)
+    ze.zeDriverGet(ctypes.byref(n), None)
+    drivers = (ctypes.c_void_p * n.value)()
+    ze.zeDriverGet(ctypes.byref(n), drivers)
+    for d in drivers:
+        m = ctypes.c_uint32(0)
+        ze.zeDeviceGet(ctypes.c_void_p(d), ctypes.byref(m), None)
+        devs = (ctypes.c_void_p * m.value)()
+        ze.zeDeviceGet(ctypes.c_void_p(d), ctypes.byref(m), devs)
+        for dev in devs:
+            p = Props(stype=0x3)
+            ze.zeDeviceGetProperties(ctypes.c_void_p(dev), ctypes.byref(p))
+            print(f"{types.get(p.type, p.type)}: {p.name.decode()} [{p.vendorId:04x}:{p.deviceId:04x}]")
+    EOF
+  check-qmassa: |
+    sudo qmassa -x -n 3 -m 500 -t /tmp/qmassa.json
+    python3 - <<'EOF'
+    import json
+    state = json.loads(open("/tmp/qmassa.json").read().splitlines()[-1])
+    for d in state["devs_state"]:
+        st = d["dev_stats"]
+        mem = st["mem_info"][-1]
+        print(f"{d['pci_dev']} {d['pci_id']} driver={d['drv_name']} type={d['dev_type']} nodes=[{d['dev_nodes']}]")
+        print(f"  smem used {mem['smem_used'] >> 20} MiB / {mem['smem_total'] >> 20} MiB")
+        for lim, f in zip(d["freq_limits"], st["freqs"][-1]):
+            print(f"  {lim['name']}: act {f['act_freq']} MHz (max {lim['maximum']})")
+        print(f"  power: {st.get('power', [])[-1:] or 'n/a'}")
+        print(f"  engines: {st['eng_usage'] or 'no active DRM clients'}")
+    EOF

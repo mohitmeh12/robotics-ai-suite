@@ -432,6 +432,10 @@ The skill enforces:
 
 For details and installation instructions for this and other robotics agent skills, see the [Robotics AI Suite Skills Documentation](https://developer.robotics.intel.com/development-stack/ai_resources/skills/).
 
+## Try It in a Canonical Workshop
+
+[workshop/](workshop/README.md) runs this component in a [Canonical Workshop](https://ubuntu.com/workshop/docs/) container (`wandering` on Jazzy, `wandering-humble` on Humble) with the host's Intel GPU and NPU passed through, installed with the Robotics AI Suite installer. See [Canonical Workshop environments](../../workshops/README.md) for the prerequisites and the other workshops.
+
 ## License
 
 `wandering` is licensed under [Apache 2.0 License](./LICENSES/Apache-2.0.txt).

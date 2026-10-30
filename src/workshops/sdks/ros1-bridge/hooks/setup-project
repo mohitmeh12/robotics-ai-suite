@@ -1,0 +1,25 @@
+# Copyright (C) 2026 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+set -e
+# ROS 1 Noetic, ROS 2 Foxy and ros1_bridge from packages.ros.org; these exist only for Ubuntu 20.04 (focal).
+export DEBIAN_FRONTEND=noninteractive
+set -a; . /etc/environment; set +a
+
+. /etc/os-release
+if [ "$VERSION_CODENAME" != focal ]; then
+  echo "ros1-bridge: needs base ubuntu@20.04, got $VERSION_CODENAME" >&2
+  exit 1
+fi
+
+KEY=/usr/share/keyrings/ros-archive-keyring.gpg
+# Retry downloads: a single proxy error (e.g. 502) otherwise aborts the launch.
+echo 'Acquire::Retries "5";' | sudo tee /etc/apt/apt.conf.d/80retries
+sudo -E apt-get update -q
+sudo -E apt-get install -y -q curl gnupg
+sudo -E curl -fsSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key -o "$KEY"
+echo "deb [signed-by=$KEY] http://packages.ros.org/ros/ubuntu focal main" | sudo tee /etc/apt/sources.list.d/ros1.list
+echo "deb [signed-by=$KEY] http://packages.ros.org/ros2/ubuntu focal main" | sudo tee /etc/apt/sources.list.d/ros2.list
+sudo -E apt-get update -q
+sudo -E apt-get install -y -q ros-noetic-ros-base ros-foxy-ros-base ros-foxy-ros1-bridge ros-foxy-rmw-cyclonedds-cpp

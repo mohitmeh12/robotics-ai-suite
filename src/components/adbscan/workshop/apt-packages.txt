@@ -1,0 +1,7 @@
+# Copyright (C) 2026 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+ros-${ROS_DISTRO}-adbscan-ros2
+# /scan, /camera/depth/color/points, /camera/color/image_raw (18 s).
+ros-${ROS_DISTRO}-bagfile-laser-pointcloud

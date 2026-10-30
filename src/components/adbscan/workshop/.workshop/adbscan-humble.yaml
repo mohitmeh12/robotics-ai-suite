@@ -1,0 +1,41 @@
+# Copyright (C) 2026 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+name: adbscan-humble
+base: ubuntu@22.04
+sdks:
+  - name: project-proxy
+  - name: project-robotics-ai-suite
+actions:
+  # ADBSCAN clustering on the bundled bag, looping, with RViz (desktop plug). Ctrl+C to stop.
+  # Optional argument: 2D (default, /scan) or RS (/camera/depth/color/points).
+  bag-replay: |
+    python3 -c 'import ctypes as c, os; x = c.CDLL("libX11.so.6"); x.XOpenDisplay.restype = c.c_void_p; exit(not x.XOpenDisplay(os.environ.get("DISPLAY", "").encode()))' || { echo "Cannot open X display '${DISPLAY:-unset}'. Reconnect the desktop plug: workshop disconnect $(hostname)/robotics-ai-suite:desktop; workshop connect $(hostname)/robotics-ai-suite:desktop"; false; }
+    source /opt/ros/*/setup.bash
+    MODE=${1:-2D}
+    CFG=/opt/ros/$ROS_DISTRO/share/adbscan_ros2/config
+    ros2 run adbscan_ros2 adbscan_sub --ros-args --params-file $CFG/adbscan_sub_$MODE.yaml > /tmp/adbscan_sub.log 2>&1 &
+    # Markers are stamped 'map'; the bag has no map frame, so pin it to the laser.
+    ros2 run tf2_ros static_transform_publisher --frame-id map --child-frame-id laser > /tmp/adbscan_tf.log 2>&1 &
+    QT_QPA_PLATFORM=xcb rviz2 -d $CFG/adbscan_RS_config.rviz > /tmp/adbscan_rviz.log 2>&1 &
+    sleep 3
+    ros2 bag play /opt/ros/$ROS_DISTRO/share/bagfiles/laser-pointcloud --loop
+  # Headless: one pass of the bag per mode; PASS if /obstacle_array publishes clusters in 2D and RS modes.
+  bag-replay-check: |
+    source /opt/ros/*/setup.bash
+    CFG=/opt/ros/$ROS_DISTRO/share/adbscan_ros2/config
+    RC=0
+    for MODE in 2D RS; do
+      echo "== $MODE"
+      ros2 run adbscan_ros2 adbscan_sub --ros-args --params-file $CFG/adbscan_sub_$MODE.yaml > /tmp/adbscan_sub_$MODE.log 2>&1 &
+      sleep 3
+      python3 /project/adbscan_check.py 24 & CHECK=$!
+      sleep 1
+      ros2 bag play /opt/ros/$ROS_DISTRO/share/bagfiles/laser-pointcloud > /tmp/adbscan_bag.log 2>&1
+      wait $CHECK || RC=1
+      pkill -INT -x adbscan_sub || true; sleep 2
+      pkill -9 -x adbscan_sub || true
+    done
+    # A plain `exit` in an action makes `workshop run` return 1.
+    (exit $RC)

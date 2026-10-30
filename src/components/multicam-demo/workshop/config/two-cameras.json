@@ -1,0 +1,18 @@
+[
+  {
+    "name": "cam0 yolov8n",
+    "adapter": "yolov8",
+    "model": "../models/yolov8/FP16/yolov8n.xml",
+    "device": "GPU",
+    "source": "0",
+    "data_type": "FP16"
+  },
+  {
+    "name": "cam1 yolov8n-seg",
+    "adapter": "yolov8",
+    "model": "../models/yolov8/FP16/yolov8n-seg.xml",
+    "device": "GPU",
+    "source": "1",
+    "data_type": "FP16"
+  }
+]

@@ -1,0 +1,10 @@
+# Copyright (C) 2026 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+version = 1
+
+[[annotations]]
+path = ["patches/ssd-npu-fix.patch"]
+SPDX-FileCopyrightText = "2026 Intel Corporation"
+SPDX-License-Identifier = "Apache-2.0"

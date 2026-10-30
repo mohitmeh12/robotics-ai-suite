@@ -1,0 +1,7 @@
+# Copyright (C) 2026 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+ros-${ROS_DISTRO}-pointcloud-groundfloor-segmentation
+# Organized 848x480 depth + camera_info with full TF; the laser-pointcloud bag's cloud is unorganized.
+ros-${ROS_DISTRO}-bagfile-spinning

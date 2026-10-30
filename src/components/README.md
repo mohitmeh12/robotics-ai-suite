@@ -34,4 +34,6 @@ make package
 
 Refer to each component's README and `Makefile` for specific options and supported `ROS_DISTRO` settings.
 
+## Canonical Workshop Environments
 
+Most components have a `workshop/` directory: a [Canonical Workshop](https://ubuntu.com/workshop/docs/) definition that installs the component with the Robotics AI Suite installer in an LXD container, with the host's Intel GPU, NPU, camera and desktop passed through, in Jazzy and Humble variants side by side. The Robotics System Profiler's workshop is in [ros-kpi/workshop](ros-kpi/workshop/README.md), including a Lyrical variant on Ubuntu 26.04. Shared SDKs, scripts and documentation are in [src/workshops](../workshops/README.md).

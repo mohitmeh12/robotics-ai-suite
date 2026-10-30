@@ -115,6 +115,10 @@ The per-collection reference application architectures — which zoom into a rep
 | [Bird’s Eye View Perception: Fast-BEV](https://developer.robotics.intel.com/development-stack/ai_resources/openvino/models/model_fastbev/) | Obtaining a Bird's Eye View (BEV) perception is to gain a comprehensive understanding of the spatial layout and relationships between objects in a scene |
 | [Monocular Depth Estimation: Depth Anything V2](https://developer.robotics.intel.com/development-stack/ai_resources/openvino/models/model_depthanythingv2/) | A powerful tool that leverages deep learning to infer 3D information from 2D images |
 
+## Canonical Workshop Environments
+
+[src/workshops](src/workshops/README.md) runs the suite's components in [Canonical Workshop](https://ubuntu.com/workshop/docs/) containers, one per component, with the host's Intel GPU, NPU, camera and desktop passed through. Each component's definition is in its `workshop/` directory.
+
 ## Website
 
 The documentation website combines two tools:

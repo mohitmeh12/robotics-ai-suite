@@ -386,6 +386,10 @@ To achieve optimal output quality, it is essential to fulfill following requirem
 - **Stopping the demo**: You can stop the demo anytime by pressing `ctrl-C`.
 - **Segmentation quality issues**: The quality of the segmentation and labeling depends on the quality of the input data. Noisy data, especially major outliers could result in wrong labels. If this is the case, the input data should be pre-processed to reduce noise.
 
+## Try It in a Canonical Workshop
+
+[workshop/](workshop/README.md) runs this component in a [Canonical Workshop](https://ubuntu.com/workshop/docs/) container (`groundfloor` on Jazzy, `groundfloor-humble` on Humble) with the host's Intel GPU and NPU passed through, installed with the Robotics AI Suite installer. See [Canonical Workshop environments](../../workshops/README.md) for the prerequisites and the other workshops.
+
 ## License
 
 `groundfloor` is licensed under [Apache 2.0 License](./LICENSES/Apache-2.0.txt).
