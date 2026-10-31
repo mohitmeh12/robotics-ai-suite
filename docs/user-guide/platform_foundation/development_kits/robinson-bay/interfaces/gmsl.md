@@ -24,22 +24,6 @@ Set `Camera1`, `Camera2` and `Camera3` to `Disabled`, then save and exit.
 
 ![CEXD BIOS System I/O cameras disabled](../images/bios_CEXD_GMSL_2.png)
 
-The following image shows the location of each mini-FAKRA port with its MIPI
-port and I2C bus for reference:
-
-::::{tab-set}
-:::{tab-item} **Rev B**
-
-![CEXD external ports](../images/gmsl_label_CEXD.png)
-
-:::
-:::{tab-item} **Rev C**
-
-![CEXD external ports Rev C](../images/gmsl_label_CEXD_rev_C.png)
-
-:::
-::::
-
 ## Next steps
 
-Once all BIOS camera settings are disabled, continue with [GMSL Camera Setup with ACPI SSDT Overlay](../../../../components/sensors/cameras/gmsl/ssdt.md).
+Once all BIOS camera settings are disabled, continue with [GMSL Camera Setup with ACPI SSDT Overlay](../../../../components/sensors/cameras/gmsl/index.md).
