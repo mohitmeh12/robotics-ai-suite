@@ -153,7 +153,7 @@ link fails to probe, V4L2 sub-device registration fails and none of the
 cameras can stream.
 ```
 
-## Step 3: Install the Driver and Select the SSDT Overlay
+## Step 3: Install the Driver and Select a pre-canned SSDT Overlay
 
 Install the GMSL driver package:
 
@@ -225,6 +225,70 @@ chosen overlay. The package then:
 sudo reboot
 ```
 
+## Step 3b: Create your own custom the SSDT Overlay
+
+If ``custom-board`` or ``custom-sensor`` GMSL selection dialog is set, the admin user shall create and compileboard and sensor specific SSDT-overlay  AML file from the package source : 
+Below an example of custom GMSL Camera ``isx031`` from an exsting SSDT-overlay design template :
+
+![GMSL ``custom-sensor`` GMSL selection dialog](../../../../images/gmsl/gmsl-dkms-debconf_maxim-serdes_03.png "GMSL ``custom-sensor`` GMSL selection dialog")
+
+```bash
+sudo apt-get install acpica-tools
+apt source intel-mipi-gmsl-dkms
+cd intel-mipi-gmsl-drivers-20260907
+cp acpi/ipu7/max96724-cexd-intrbl_d3_isx031.asl acpi/ipu7/max96724-cexd-intrbl_d3_isx031-custom.asl
+script/acpi/gen_ssdt.sh acpi/ipu7/max96724-cexd-intrbl_d3_isx031.asl
+```
+compile SSDT overlay from `/usr/share/camera/acpi/ipu7/` into a custom `/boot/img_ssdt.img`.
+```console
+Intel ACPI Component Architecture
+ASL+ Optimizing Compiler/Disassembler version 20250807
+Copyright (c) 2000 - 2025 Intel Corporation
+
+ASL Input:     acpi/ipu7/max96724-cexd-intrbl_d3_isx031-custom.asl -   12002 bytes    248 keywords      0 source lines
+AML Output:    acpi/ipu7/max96724-cexd-intrbl_d3_isx031-custom.aml -   13702 bytes     36 opcodes     212 named objects
+Preprocessor:  acpi/ipu7/max96724-cexd-intrbl_d3_isx031-custom.i -  127894 bytes
+
+Compilation successful. 0 Errors, 0 Warnings, 0 Remarks, 300 Optimizations
+29 blocks
+Successful generation of /tmp/img_ssdt.img
+Successful copy of /tmp/img_ssdt.img to /boot
+```
+
+Update `GRUB_EARLY_INITRD_LINUX_CUSTOM` to `/etc/default/grub.d/ssdt.cfg` :
+```bash
+update-grub
+```
+
+```console
+Sourcing file `/etc/default/grub'
+Sourcing file `/etc/default/grub.d/09_eci-user.cfg'
+Sourcing file `/etc/default/grub.d/ssdt.cfg'
+Generating grub configuration file ...
+Found linux image: /boot/vmlinuz-7.0.0-38-generic
+Found initrd image: /boot/img_ssdt.img /boot/initrd.img-7.0.0-38-generic
+Found linux image: /boot/vmlinuz-7.0.0-34-generic
+Found initrd image: /boot/img_ssdt.img /boot/initrd.img-7.0.0-34-generic
+Found linux image: /boot/vmlinuz-6.17.0-40-generic
+Found initrd image: /boot/img_ssdt.img /boot/initrd.img-6.17.0-40-generic
+Found linux image: /boot/vmlinuz-6.17.0-35-generic
+Found initrd image: /boot/img_ssdt.img /boot/initrd.img-6.17.0-35-generic
+Found linux image: /boot/vmlinuz-6.11.0-17-generic
+Found initrd image: /boot/img_ssdt.img /boot/initrd.img-6.11.0-17-generic
+Found memtest86+ 64bit EFI image: /memtest86+x64.efi
+Warning: os-prober will not be executed to detect other bootable partitions.
+Systems on them will not be added to the GRUB boot configuration.
+Check GRUB_DISABLE_OS_PROBER documentation entry.
+Adding boot menu entry for UEFI Firmware Settings ...
+done
+```
+
+**A reboot is required to load the overlay.**
+
+```bash
+sudo reboot
+```
+
 ## Step 4: Verify the SSDT Overlay and Drivers
 
 Confirm that the kernel loaded the overlay from the `initrd`:
@@ -236,7 +300,7 @@ sudo dmesg | grep SSDT
 You should see output similar to:
 
 ```console
-ACPI: SSDT ACPI table found in initrd [kernel/firmware/acpi/max96724-cexd-intrbl_d3_isx031.aml][0x143d]
+ACPI: SSDT ACPI table found in initrd [kernel/firmware/acpi/max96724-cexd-intrbl_d3_isx031-custom.aml][0x143d]
 ACPI: Table Upgrade: install [SSDT-      - IMG_IPU]
 ACPI: SSDT 0x00000000678E6000 00143D (v02        IMG_IPU  20260513 INTL 20250404)
 ```
