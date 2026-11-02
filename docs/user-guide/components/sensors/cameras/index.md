@@ -1,37 +1,27 @@
----
-:orphan:
----
-
 # Cameras
 
 This documentation covers supported interfaces, configuration, and validated
 camera modules.
 
-## Supported Edge Cameras
+> [!NOTE]
+> The cameras listed on this page are those that have been tested with the
+> Robotics AI Suite. For a comprehensive list of Verified Supported Edge Cameras,
+> see [Verified Supported Edge Cameras](https://builders.intel.com/solutionslibrary/verified-supported-edge-camera).
 
-Intel's SoC supports a wide range of cameras and interfaces, such as MIPI and GMSL, giving you the flexibility to design robust vision systems. See document below for a complete list of supported edge cameras.
 
-```{raw} html
-<iframe
-  src="https://builders.intel.com/docs/networkbuilders/verified-supported-edge-camera-1788867680.pdf"
-  width="100%"
-  height="800px"
-  style="border: 1px solid #ccc;"
-  title="Verified Supported Edge Cameras">
-  <p>Your browser does not support embedded PDFs.
-     <a href="https://builders.intel.com/docs/networkbuilders/verified-supported-edge-camera-1788867680.pdf">Download the PDF</a>.
-  </p>
-</iframe>
-```
 
-## Validated GMSL Cameras
+## Camera Catalog
+
+The following cameras are supported.
+
+### Supported GMSL Cameras
 
 See **[GMSL Camera Guide](./gmsl/index.md)** for instructions on setting up a GMSL camera.
 
 ```{include} ./gmsl/fragment_camera_table_gmsl.md
 ```
 
-## Validated USB Cameras
+### Supported USB Cameras
 
 See **[USB Camera Guide](./usb/index.md)** for instructions on setting up a GMSL camera.
 

@@ -56,72 +56,21 @@ Browse our curated catalog of Intel-powered edge AI systems and applications for
 
 ## Next Steps
 
-Continue to the System Requirements guide to learn about supported Intel processors, OS requirements, and development kits:
+Continue to the Hardware guide to learn about supported Intel processors and development kits:
 
-- **[System Requirements](./platform_foundation/system_requirements.md)** — select a platform and install an OS distribution.
+- **[Hardware](./platform_foundation/hardware.md)** ? choose a processor and a validated development kit.
 
 ![Robot Background](./images/RobotBackground.png)
 
 :::{toctree}
-:caption: Operating System & Hardware
 :hidden:
 
-System Requirements <platform_foundation/system_requirements.md>
-Getting Started <platform_foundation/getting_started.md>
-:::
-
-:::{toctree}
-:caption: Components
-:hidden:
-
-
-Robotics Components optimized for Intel <components/optimized_solutions/index>
-Real-time Determinism <components/realtime_determinism/index>
-Benchmarking <components/benchmarking/index>
+Getting Started <platform_foundation/getting_started>
+Hardware <platform_foundation/hardware>
+Platform Software <platform_foundation/platform_software>
+Middleware <components/middleware>
 Security <components/security/index>
-Navigation <components/navigation/index>
-Runtime <components/runtime/index>
-Simulation <components/simulation/index>
-Virtualization <components/virtualization/index>
 Sensors <components/sensors/index>
-:::
-
-
-:::{toctree}
-:caption: AI Toolkits
-:hidden:
-
-AI Developer Tools and Frameworks <ai_resources/intel_powered_ai>
-OpenVINO™ <ai_resources/openvino/index>
-PyTorch XPU <ai_resources/developer_tools/pytorch-xpu>
-Physical AI Studio  <ai_resources/physical_ai_studio>
-Geti <ai_resources/developer_tools/geti>
-Intel® oneAPI <ai_resources/developer_tools/oneapi>
-AI Skills <ai_resources/skills/index>
-:::
-
-:::{toctree}
-:caption: Hardware Blueprints
-:hidden:
-
-Blueprints and Requirements <hardware_blueprints/index>
-Autonomous Mobile Robot <hardware_blueprints/amr/index>
-Humanoid Robot <hardware_blueprints/humanoid/index>
-Stationary Arm <hardware_blueprints/stationary_arm/index>
-:::
-
-:::{toctree}
-:caption: Resources
-:hidden:
-
-Release Notes <resources/release-notes.md>
-Autonomous Mobile Robot <software_references/amr/index>
-Humanoid Robot <software_references/humanoid/index>
-Stationary Arm <software_references/stationary_arm/index>
-Software Index <resources/index>
-Heterogeneous Computing <resources/heterogeneous_computing.md>
-Troubleshooting <resources/troubleshooting.md>
-Glossary <resources/glossary.md>
-Get Help or Contribute <https://docs.openedgeplatform.intel.com/dev/OEP-articles/contribution-guide.html>
-Hack-a-thon Resources <resources/hackathon_resources.md>
+AI Toolkits <ai_resources/ai_toolkits>
+Resources <resources/resources>
 :::

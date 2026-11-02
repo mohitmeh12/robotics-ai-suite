@@ -74,7 +74,7 @@ Use the Stationary Arm reference platform when integrating toolkit components
 with a target robot and workspace. Use the UR5e Vision and Controls deployment
 when working with the verified UR5e, Robotiq, and RealSense configuration.
 
-Complete the shared [System Requirements](../../platform_foundation/system_requirements.md)
+Complete the shared [Development Kits](../../platform_foundation/development_kits/index.md)
 and [Getting Started](../../platform_foundation/getting_started.md) guide
 before installing the toolkit. Configure the robot network connection,
 camera-to-world transform, controller, gripper, and collision environment for

@@ -8,7 +8,7 @@ Intel recommends a fresh installation of the Ubuntu distribution of the Linux OS
 for your target system.
 
 The manual installation only supports Install Canonical Ubuntu 24.04 LTS (Noble Numbat) Desktop on the supported
-platform. See [System Requirements](../system_requirements.md) for the supported
+platform. See [Development Kits](../development_kits/index.md) for the supported
 configuration.
 
 ## 2. Install and Configure ROS 2

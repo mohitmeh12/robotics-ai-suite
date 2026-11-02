@@ -76,7 +76,6 @@ exclude_patterns = [
     "Thumbs.db",
     ".DS_Store",
     "README.md",
-    "components/sensors/cameras/index.md",
 ]
 
 # The suffix(es) of source filenames.
@@ -122,8 +121,8 @@ html_context = {
 html_theme_options = {
     "navigation_depth": 6,
     "show_toc_level": 1,
-    "show_nav_level": 1,
-    # "collapse_navigation": False,
+    "show_nav_level": 0,
+    "collapse_navigation": False,
     # "navigation_with_keys": True,
     # Navbar Configuration
     # "navbar_start": [],  # Logo on the left
@@ -259,77 +258,9 @@ def show_hidden_directives(app, config):  # pylint: disable=unused-argument
     print(f"Uncommented directives in {found_file} files", flush=True)
 
 
-def filter_blueprints_sidebar(html_content):
-    """
-    Jinja filter: For pages under hardware_blueprints, filter the sidebar toctree
-    so it only displays the Hardware Blueprints section.
-    """
-    from bs4 import BeautifulSoup
-    from markupsafe import Markup
-
-    is_soup = isinstance(html_content, BeautifulSoup)
-    soup = html_content if is_soup else BeautifulSoup(str(html_content), "html.parser")
-
-    current_keep = False
-    elements_to_remove = []
-    for child in list(soup.children):
-        if child.name == "p" and "caption" in child.get("class", []):
-            caption_text = child.get_text(strip=True)
-            current_keep = "blueprint" in caption_text.lower()
-        if not current_keep:
-            elements_to_remove.append(child)
-    for el in elements_to_remove:
-        el.decompose()
-
-    if is_soup:
-        return soup
-    return Markup(str(soup))
-
-
-def filter_development_stack_sidebar(html_content):
-    """
-    Jinja filter: For development stack pages (outside hardware_blueprints),
-    filter the sidebar toctree so it hides the Hardware Blueprints section.
-    """
-    from bs4 import BeautifulSoup
-    from markupsafe import Markup
-
-    is_soup = isinstance(html_content, BeautifulSoup)
-    soup = html_content if is_soup else BeautifulSoup(str(html_content), "html.parser")
-
-    current_keep = True
-    elements_to_remove = []
-    for child in list(soup.children):
-        if child.name == "p" and "caption" in child.get("class", []):
-            caption_text = child.get_text(strip=True)
-            current_keep = "blueprint" not in caption_text.lower()
-        if not current_keep:
-            elements_to_remove.append(child)
-    for el in elements_to_remove:
-        el.decompose()
-
-    if is_soup:
-        return soup
-    return Markup(str(soup))
-
-
-def register_custom_jinja_filters(app):
-    """
-    Register custom filters with the Sphinx Jinja2 environment.
-    """
-    if hasattr(app.builder, "templates") and hasattr(app.builder.templates, "environment"):
-        app.builder.templates.environment.filters["filter_blueprints_sidebar"] = (
-            filter_blueprints_sidebar
-        )
-        app.builder.templates.environment.filters["filter_development_stack_sidebar"] = (
-            filter_development_stack_sidebar
-        )
-
-
 # -- Function for setting up Sphinx extensions and event handlers ------------
 def setup(app):
     """
     Sphinx entrypoint function
     """
     app.connect("config-inited", show_hidden_directives)
-    app.connect("builder-inited", register_custom_jinja_filters)

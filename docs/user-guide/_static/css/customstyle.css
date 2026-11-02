@@ -180,6 +180,10 @@ button.sidebar-toggle:hover::before {border-bottom-style:none;}
   right: auto;
   width: 1rem;
   justify-content: flex-start;
+  /* Always show the caret so collapsed items read as expandable without
+     hovering (pydata hides it until hover/open by default). */
+  visibility: visible !important;
+  opacity: 1 !important;
 }
 
 /* reserve gutter on the left instead of the right */

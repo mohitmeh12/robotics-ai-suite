@@ -2,7 +2,7 @@
 
 The Robotics AI Suite uses the Robot Operating System 2 (ROS 2) as its primary runtime execution engine, communication middleware, and lifecycle manager. ROS 2 provides the modular backbone that interconnects sensor ingestion, hardware abstraction, artificial intelligence inference, autonomous navigation, robotic manipulation, and deterministic motor control into a unified software stack.
 
-The suite standardizes on **ROS 2 Jazzy Jalisco** running on **Canonical Ubuntu 24.04 LTS (Noble Numbat)** across supported Intel platforms. For hardware and platform prerequisites, refer to the [System Requirements](../../platform_foundation/system_requirements.md).
+The suite standardizes on **ROS 2 Jazzy Jalisco** running on **Canonical Ubuntu 24.04 LTS (Noble Numbat)** across supported Intel platforms. For hardware and platform prerequisites, refer to the [Development Kits](../../platform_foundation/development_kits/index.md).
 
 
 ## Architecture & Core Capabilities

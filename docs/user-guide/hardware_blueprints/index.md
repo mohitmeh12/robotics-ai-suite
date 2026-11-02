@@ -40,8 +40,8 @@ Before deploying a blueprint, ensure your system meets the platform and middlewa
 
 ::::{grid} 2
 
-:::{grid-item-card} **System Requirements**
-:link: ../platform_foundation/system_requirements
+:::{grid-item-card} **Development Kits**
+:link: ../platform_foundation/development_kits/index
 :link-type: doc
 :link-alt: clickable cards
 
@@ -56,3 +56,11 @@ Review supported Intel® Core™ and Core™ Ultra processors, validated Ubuntu 
 Follow step-by-step or express installation guides to configure drivers, platform packages, and the ROS 2 environment on your target hardware.
 :::
 ::::
+
+:::{toctree}
+:hidden:
+
+Autonomous Mobile Robot <amr/index>
+Humanoid Robot <humanoid/index>
+Stationary Arm <stationary_arm/index>
+:::

@@ -1,7 +1,3 @@
----
-orphan: true
----
-
 # Processors
 
 The Robotics AI Suite is validated on the Intel® processor series below. Each

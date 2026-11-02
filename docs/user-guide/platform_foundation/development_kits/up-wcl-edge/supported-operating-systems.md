@@ -6,7 +6,7 @@ sidebar_label: Supported OS
 # Supported Operating Systems
 
 This development kit is validated against the operating systems listed below. The
-[Supported Operating Systems](../../system_requirements.md#supported-operating-systems) section provides configuration guides for the platform as a
+[Supported Operating Systems](../index.md#supported-operating-systems) section provides configuration guides for the platform as a
 whole; only the operating systems listed here are validated for this kit.
 
 | BIOS | Validated Operating System |

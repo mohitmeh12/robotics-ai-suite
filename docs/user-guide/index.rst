@@ -10,3 +10,10 @@ CI/CD pipeline.
    :caption: Platform Foundation
 
    Robotics <./ai-suite-robotics.md>
+
+.. toctree::
+   :maxdepth: 1
+   :hidden:
+   :caption: Blueprints
+
+   Blueprints <./hardware_blueprints/index.md>

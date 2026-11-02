@@ -8,7 +8,7 @@ applications.
 This guide assumes you are familiar with common Linux terminal commands. An
 understanding of ROS is also highly recommended.
 
-- Review the [System Requirements](system_requirements.md) before installation.
+- Review the supported [Development Kits](development_kits/index.md) before installation.
 
 ## Select a Configuration
 
