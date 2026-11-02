@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # pylint: disable=duplicate-code
 
-# Copyright (C) 2025 Intel Corporation
+# Copyright (C) 2026 Intel Corporation
 # Copyright 2019 ROBOTIS CO., LTD.
 #
 # SPDX-License-Identifier: Apache-2.0
@@ -33,32 +33,32 @@ from launch_ros.actions import Node
 def generate_launch_description():
     """Generate launch description."""
     launch_file_dir = os.path.join(
-        get_package_share_directory('followme_turtlebot3_gazebo'), 'launch'
+        get_package_share_directory("followme_turtlebot3_gazebo"), "launch"
     )
 
-    x_pose_gbot = LaunchConfiguration('x_pose_gbot', default='0.8')
-    y_pose_gbot = LaunchConfiguration('y_pose_gbot', default='0.0')
-    yaw_pose_gbot = LaunchConfiguration('yaw_pose_gbot', default='0.0')
+    x_pose_gbot = LaunchConfiguration("x_pose_gbot", default="0.8")
+    y_pose_gbot = LaunchConfiguration("y_pose_gbot", default="0.0")
+    yaw_pose_gbot = LaunchConfiguration("yaw_pose_gbot", default="0.0")
 
     # Use the custom waffle model with RGBD (depth) camera.
     # The RGBD camera publishes PointCloud2 on /camera/points in Gazebo.
     depth_model_sdf = os.path.join(
-        get_package_share_directory('followme_turtlebot3_gazebo'),
-        'models',
-        'turtlebot3_waffle_depth',
-        'model.sdf',
+        get_package_share_directory("followme_turtlebot3_gazebo"),
+        "models",
+        "turtlebot3_waffle_depth",
+        "model.sdf",
     )
 
     # --- Gazebo world with two robots (depth-camera waffle + guide) ---
     launch_gz_world_cmd = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
-            os.path.join(launch_file_dir, 'empty_world_multibot.launch.py')
+            os.path.join(launch_file_dir, "empty_world_multibot.launch.py")
         ),
         launch_arguments={
-            'x_pose_gbot': x_pose_gbot,
-            'y_pose_gbot': y_pose_gbot,
-            'yaw_pose_gbot': yaw_pose_gbot,
-            'model_sdf_path': depth_model_sdf,
+            "x_pose_gbot": x_pose_gbot,
+            "y_pose_gbot": y_pose_gbot,
+            "yaw_pose_gbot": yaw_pose_gbot,
+            "model_sdf_path": depth_model_sdf,
         }.items(),
     )
 
@@ -66,57 +66,59 @@ def generate_launch_description():
 
     # Clock (Gazebo → ROS2) — required for use_sim_time nodes
     gz_clock_bridge = Node(
-        package='ros_gz_bridge',
-        executable='parameter_bridge',
-        arguments=['/clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock'],
-        output='screen',
+        package="ros_gz_bridge",
+        executable="parameter_bridge",
+        arguments=["/clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock"],
+        output="screen",
     )
 
     # RGBD camera PointCloud2 (Gazebo → ROS2)
     gz_pointcloud_bridge = Node(
-        package='ros_gz_bridge',
-        executable='parameter_bridge',
-        arguments=['/camera/points@sensor_msgs/msg/PointCloud2[gz.msgs.PointCloudPacked'],
-        parameters=[{
-            'qos_overrides./camera/points.publisher.reliability': 'best_effort',
-        }],
-        output='screen',
+        package="ros_gz_bridge",
+        executable="parameter_bridge",
+        arguments=["/camera/points@sensor_msgs/msg/PointCloud2[gz.msgs.PointCloudPacked"],
+        parameters=[
+            {
+                "qos_overrides./camera/points.publisher.reliability": "best_effort",
+            }
+        ],
+        output="screen",
     )
 
     # Follower robot cmd_vel (ROS2 → Gazebo)
     gz_cmd_vel_bridge = Node(
-        package='ros_gz_bridge',
-        executable='parameter_bridge',
-        arguments=['/cmd_vel@geometry_msgs/msg/Twist]gz.msgs.Twist'],
-        remappings=[('/cmd_vel', '/tb3/cmd_vel')],
-        output='screen',
+        package="ros_gz_bridge",
+        executable="parameter_bridge",
+        arguments=["/cmd_vel@geometry_msgs/msg/Twist]gz.msgs.Twist"],
+        remappings=[("/cmd_vel", "/tb3/cmd_vel")],
+        output="screen",
     )
 
     # Guide robot cmd_vel (ROS2 → Gazebo)
     gz_guide_cmd_vel_bridge = Node(
-        package='ros_gz_bridge',
-        executable='parameter_bridge',
-        arguments=['/guide_robot/cmd_vel@geometry_msgs/msg/Twist]gz.msgs.Twist'],
-        output='screen',
+        package="ros_gz_bridge",
+        executable="parameter_bridge",
+        arguments=["/guide_robot/cmd_vel@geometry_msgs/msg/Twist]gz.msgs.Twist"],
+        output="screen",
     )
 
     # Guide robot odometry (Gazebo → ROS2)
     gz_guide_odom_bridge = Node(
-        package='ros_gz_bridge',
-        executable='parameter_bridge',
-        arguments=['/guide_robot/odom@nav_msgs/msg/Odometry[gz.msgs.Odometry'],
-        output='screen',
+        package="ros_gz_bridge",
+        executable="parameter_bridge",
+        arguments=["/guide_robot/odom@nav_msgs/msg/Odometry[gz.msgs.Odometry"],
+        output="screen",
     )
 
     # Camera image (Gazebo → ROS2) for RViz
     # The depth model publishes RGB on /camera/image (not /camera/image_raw),
     # so we remap to /camera/image_raw for consistent RViz config.
     gz_camera_image_bridge = Node(
-        package='ros_gz_bridge',
-        executable='parameter_bridge',
-        arguments=['/camera/image@sensor_msgs/msg/Image[gz.msgs.Image'],
-        remappings=[('/camera/image', '/camera/image_raw')],
-        output='screen',
+        package="ros_gz_bridge",
+        executable="parameter_bridge",
+        arguments=["/camera/image@sensor_msgs/msg/Image[gz.msgs.Image"],
+        remappings=[("/camera/image", "/camera/image_raw")],
+        output="screen",
     )
 
     ld = LaunchDescription()

@@ -664,7 +664,7 @@ bool isDubinsCollision(
 
 vector<pair<double, double>> removeRedundantNodes(
   vector<std::array<double, 3>> & pathWithHeadings, const vector<pair<double, double>> & dubinsPath,
-  const vector<int> & nodeIndeces, const double & turnRadius, const double & headingTolerance,
+  const vector<int> & nodeIndices, const double & turnRadius, const double & headingTolerance,
   const vector<vector<int>> & costmap)
 {
   vector<pair<double, double>> path;
@@ -692,7 +692,7 @@ vector<pair<double, double>> removeRedundantNodes(
       bool done = false;
 
       originalPathSeg = vector<pair<double, double>>(
-        dubinsPath.begin() + nodeIndeces[currNode], dubinsPath.begin() + nodeIndeces[compareNode]);
+        dubinsPath.begin() + nodeIndices[currNode], dubinsPath.begin() + nodeIndices[compareNode]);
       double newHeadingTolerance = (compareNode == goalNode) ? M_PI / 48 : headingTolerance;
       if (!isDubinsCollision(
             costmap, pt1, pt2, 1.0, turnRadius, q1[2], q2[2], newHeadingTolerance, true,
@@ -739,7 +739,7 @@ vector<pair<double, double>> removeRedundantNodes(
     vector<pair<double, double>> pathSeg;
     if (path_segments.find({curr, next}) == path_segments.end()) {
       pathSeg = vector<pair<double, double>>(
-        dubinsPath.begin() + nodeIndeces[curr], dubinsPath.begin() + nodeIndeces[next]);
+        dubinsPath.begin() + nodeIndices[curr], dubinsPath.begin() + nodeIndices[next]);
     } else {
       pathSeg = path_segments[{essentialNodes[i], essentialNodes[i + 1]}];
     }
@@ -774,7 +774,7 @@ double meanHeading(pair<double, double> * q0, pair<double, double> * q1, pair<do
 void interpolateItsPath(
   vector<std::array<double, 3>> & pathWithHeadings, vector<pair<double, double>> & oldPath,
   const int & numSteps, const double & initialHeading, const double & finalHeading,
-  vector<int> & nodeIndeces)
+  vector<int> & nodeIndices)
 {
   if (oldPath.empty()) {
     return;
@@ -783,17 +783,17 @@ void interpolateItsPath(
   std::array<double, 3> startNode = {oldPath[0].first, oldPath[0].second, initialHeading};
   std::array<double, 3> goalNode = {oldPath.back().first, oldPath.back().second, finalHeading};
   pathWithHeadings = {startNode};
-  nodeIndeces = {0};
+  nodeIndices = {0};
   auto interNodes =
-    getIntermediateNodes(oldPath, 1.0, nodeStepSize, initialHeading, finalHeading, nodeIndeces);
+    getIntermediateNodes(oldPath, 1.0, nodeStepSize, initialHeading, finalHeading, nodeIndices);
   pathWithHeadings.insert(pathWithHeadings.end(), interNodes.begin(), interNodes.end());
   pathWithHeadings.push_back(goalNode);
-  nodeIndeces.push_back(oldPath.size() - 1);
+  nodeIndices.push_back(oldPath.size() - 1);
 }
 
 vector<std::array<double, 3>> getIntermediateNodes(
   vector<pair<double, double>> & path, const double & pathStepSize, const double & nodeStepSize,
-  const double & initialHeading, const double & finalHeading, vector<int> & nodeIndeces)
+  const double & initialHeading, const double & finalHeading, vector<int> & nodeIndices)
 {
   vector<std::array<double, 3>> interNodes;
   if (path.size() == 0) {
@@ -811,7 +811,7 @@ vector<std::array<double, 3>> getIntermediateNodes(
                 : (i == path.size() - 1) ? finalHeading
                                          : meanHeading(&path[i - 1], &path[i], &path[i + 1]);
       interNodes.push_back({path[i].first, path[i].second, heading});
-      nodeIndeces.push_back(i);
+      nodeIndices.push_back(i);
       distCovered = 0;
     }
   }

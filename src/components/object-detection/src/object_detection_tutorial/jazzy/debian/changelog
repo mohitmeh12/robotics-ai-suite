@@ -1,3 +1,9 @@
+ros-jazzy-object-detection-tutorial (2.3-4) noble; urgency=low
+
+  * Minor fixes in the variable names
+
+ -- ECI Maintainer <eci.maintainer@intel.com>  Wed, 07 Oct 2026 00:00:00 +0000
+
 ros-jazzy-object-detection-tutorial (2.3-3) noble; urgency=low
 
   * Migrate Debian packaging metadata to CMake/CPACK; remove legacy debian

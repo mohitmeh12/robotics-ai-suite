@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright (C) 2025 Intel Corporation
+// Copyright (C) 2026 Intel Corporation
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,7 +14,9 @@
 // and limitations under the License.
 
 #include <memory>
+#include <stdexcept>
 
+#include "adbscan_core/clusterer.hpp"
 #include "doDBSCAN.hpp"
 #include "geometry_msgs/msg/point.hpp"
 #include "geometry_msgs/msg/vector3.hpp"
@@ -196,6 +198,8 @@ public:
     this->declare_parameter("min_3d_epsilon");
     this->declare_parameter("oneapi_library");
     this->declare_parameter("benchmark_number_of_frames");
+    this->declare_parameter("use_adbscan_core");
+    this->declare_parameter("core_backend");
 #else
     // From ROS Humble and beyond, declare_parameter() defaultValue is mandatory
     this->declare_parameter("Lidar_type", std::string("RS"));
@@ -214,6 +218,8 @@ public:
     this->declare_parameter("min_3d_epsilon", static_cast<double>(0.9));
     this->declare_parameter("oneapi_library", std::string("kdtree"));
     this->declare_parameter("benchmark_number_of_frames", static_cast<int>(1));
+    this->declare_parameter("use_adbscan_core", true);
+    this->declare_parameter("core_backend", std::string("legacy_cpu"));
 #endif  // PRE_ROS_HUMBLE
 
     rclcpp::Parameter Lidar_type_param = this->get_parameter("Lidar_type");
@@ -241,6 +247,7 @@ public:
     Lidar_type_ = Lidar_type_param.as_string();
     Lidar_topic_ = Lidar_topic_param.as_string();
     Verbose_ = Verbose_param.as_bool();
+    use_adbscan_core_ = this->get_parameter("use_adbscan_core").as_bool();
     t_pre = 0.0;
     t_adb = 0.0;
     t_post = 0.0;
@@ -258,6 +265,28 @@ public:
     CONFIG_PARAMS.min_3d_epsilon = min_3d_epsilon_param.as_double();
     CONFIG_PARAMS.oneapi_library = oneapi_library_param.as_string();
 
+    if (use_adbscan_core_) {
+      const auto backend = this->get_parameter("core_backend").as_string();
+      if (backend == "legacy_cpu") {
+        core_backend_ = adbscan_core::Backend::LegacyCpu;
+      } else if (
+        backend == "pcl_kdtree" || backend == "oneapi_kdtree" || backend == "oneapi_octree") {
+#ifdef USE_ONEAPI
+        if (backend == "pcl_kdtree") {
+          core_backend_ = adbscan_core::Backend::PclKdTree;
+        } else if (backend == "oneapi_kdtree") {
+          core_backend_ = adbscan_core::Backend::OneApiKdTree;
+        } else {
+          core_backend_ = adbscan_core::Backend::OneApiOctree;
+        }
+#else
+        throw std::invalid_argument("core_backend '" + backend + "' requires WITH_ONEAPI=ON");
+#endif
+      } else {
+        throw std::invalid_argument("Unknown core_backend: " + backend);
+      }
+    }
+
     // oneapi_library_ parameter is used to print out the library name with benchmark data
     // In case of invalid parameter (else condition), library choice is Standard PCL kdtree
     // (based on the if_else condition in  dbscan_adaptiveK.cpp)
@@ -267,6 +296,18 @@ public:
       oneapi_library_ = "oneAPI OCTree";
     } else {
       oneapi_library_ = "Standard PCL KDTree";
+    }
+
+    if (use_adbscan_core_) {
+      if (core_backend_ == adbscan_core::Backend::LegacyCpu) {
+        adbscan_version_ = "Core CPU";
+      } else if (core_backend_ == adbscan_core::Backend::PclKdTree) {
+        adbscan_version_ = "Core PCL KDTree";
+      } else if (core_backend_ == adbscan_core::Backend::OneApiKdTree) {
+        adbscan_version_ = "Core oneAPI KDTree";
+      } else {
+        adbscan_version_ = "Core oneAPI OCTree";
+      }
     }
 
     count_ = 0;
@@ -280,7 +321,6 @@ public:
     if (Verbose_) {
       RCLCPP_INFO(this->get_logger(), "adbscan_sub_node started; ");
     }
-    auto defalt_qos = rclcpp::QoS(rclcpp::SystemDefaultsQoS());
     auto sensor_qos = rclcpp::SensorDataQoS();
     if (Lidar_type_ == "2D") {
       subscription_2D_ = this->create_subscription<sensor_msgs::msg::LaserScan>(
@@ -302,6 +342,46 @@ public:
   }
 
 private:
+  vector<Obstacle> cluster_with_core(
+    const void * data, std::size_t num_points, adbscan_core::FrameMode mode)
+  {
+    const auto * input = static_cast<const LiDAR_data_4D_t *>(data);
+    vector<adbscan_core::Point> points;
+    points.reserve(num_points);
+    for (std::size_t index = 0; index < num_points; ++index) {
+      points.push_back({input[index].val[0], input[index].val[1], input[index].val[2]});
+    }
+
+    adbscan_core::FrameOptions options;
+    options.mode = mode;
+    options.subsample_ratio = mode == adbscan_core::FrameMode::Planar
+                                ? 1
+                                : static_cast<unsigned int>(CONFIG_PARAMS.subsample_ratio);
+    options.ground_removal = CONFIG_PARAMS.Z_based_ground_removal != 0;
+    options.z_filter = CONFIG_PARAMS.z_filter;
+    options.x_filter_back = CONFIG_PARAMS.x_filter_back;
+    options.y_filter_right = CONFIG_PARAMS.y_filter_right;
+    options.y_filter_left = CONFIG_PARAMS.y_filter_left;
+    options.base = CONFIG_PARAMS.base;
+    options.coeff_1 = CONFIG_PARAMS.coeff_1;
+    options.coeff_2 = CONFIG_PARAMS.coeff_2;
+    options.scale_factor = CONFIG_PARAMS.scale_factor;
+    options.epsilon_scale_factor = CONFIG_PARAMS.scale_factor;
+    options.min_3d_epsilon = CONFIG_PARAMS.min_3d_epsilon;
+
+    const auto result = adbscan_core::cluster_frame(points, options, core_backend_);
+    vector<Obstacle> obstacles;
+    for (const auto & cluster : result.clusters) {
+      obstacles.push_back(
+        {cluster.box_center.x, cluster.box_center.y, cluster.box_center.z, cluster.box_size.x,
+         cluster.box_size.y, cluster.box_size.z});
+    }
+    if (result.labels.empty()) {
+      obstacles.push_back({0, 0, 0, 0, 0, 0});
+    }
+    return obstacles;
+  }
+
   void topic_2D_callback(const sensor_msgs::msg::LaserScan::SharedPtr _msg)  // const jcao
   {
     RCLCPP_INFO(this->get_logger(), "Msg: number of input points: '%ld'", (_msg->ranges).size());
@@ -358,8 +438,16 @@ private:
 
     if (result == 0) {
       // function successful, run ADBSCAN to obtain a list of objects
-      vector<Obstacle> obstacles =
-        doDBSCAN(p_Data, point_list.size() * sizeof(LiDAR_data_4D_t), 2, &benchmarking_time);
+      vector<Obstacle> obstacles;
+      if (use_adbscan_core_) {
+        clock_gettime(clk_id, &t1);
+        obstacles = cluster_with_core(p_Data, point_list.size(), adbscan_core::FrameMode::Planar);
+        clock_gettime(clk_id, &t2);
+        benchmarking_time[2] = diff(t1, t2);
+      } else {
+        obstacles =
+          doDBSCAN(p_Data, point_list.size() * sizeof(LiDAR_data_4D_t), 2, &benchmarking_time);
+      }
       // RCLCPP_INFO(this->get_logger(), " obstacle size = '%ld' ", obstacles.size());
       clock_gettime(clk_id, &t1); /* CLOCK_PROCESS_CPUTIME_ID */
       // Obstacle msg to be published
@@ -488,7 +576,14 @@ private:
     if (result == 0) {
       // function successful, run ADBSCAN to obtain a list of objects
       vector<Obstacle> obstacles;
-      if (Lidar_type_ == "3D") {
+      if (use_adbscan_core_) {
+        clock_gettime(clk_id, &t1);
+        obstacles = cluster_with_core(
+          p_Data, data_size,
+          Lidar_type_ == "3D" ? adbscan_core::FrameMode::Lidar3D : adbscan_core::FrameMode::Depth);
+        clock_gettime(clk_id, &t2);
+        benchmarking_time[2] = diff(t1, t2);
+      } else if (Lidar_type_ == "3D") {
         obstacles = doDBSCAN(
           p_Data, data_size * sizeof(LiDAR_data_4D_t), 3, &benchmarking_time,
           CONFIG_PARAMS.scale_factor, CONFIG_PARAMS.min_3d_epsilon);
@@ -500,6 +595,7 @@ private:
       // obstacle msg to be published
       nav2_dynamic_msgs::msg::ObstacleArray ObstacleArr;
       ObstacleArr = Convert_Obstacles_to_ObstacleArr(obstacles);
+      ObstacleArr.header.stamp = _msg->header.stamp;
       publisher_->publish(ObstacleArr);
 
       // marker array msg to be published
@@ -586,6 +682,8 @@ private:
   string adbscan_version_;
   string oneapi_library_;
   bool Verbose_;
+  bool use_adbscan_core_;
+  adbscan_core::Backend core_backend_ = adbscan_core::Backend::LegacyCpu;
   bool start_recording_time_;
   rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr subscription_2D_;
   rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr subscription_3D_;
@@ -605,6 +703,10 @@ int main(int argc, char * argv[])
   // rclcpp::spin(std::make_shared<MinimalSubscriber>());
   try {
     rclcpp::spin(std::make_shared<MinimalSubscriber>());
+  } catch (const std::exception & error) {
+    std::cerr << "Failed to run adbscan_sub node: " << error.what() << std::endl;
+    rclcpp::shutdown();
+    return 1;
   } catch (...) {
     std::cerr << "Failed to run adbscan_sub node. " << std::endl;
     rclcpp::shutdown();

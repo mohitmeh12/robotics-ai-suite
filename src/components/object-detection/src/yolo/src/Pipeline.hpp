@@ -23,7 +23,7 @@
 
 #include "Constants.hpp"
 #include "ImageSync.hpp"
-#include "PerforamceStats.hpp"
+#include "PerformanceStats.hpp"
 #include "QueryFrame.hpp"
 #include "ThreadSafeQueue.hpp"
 #include "opencv4/opencv2/opencv.hpp"
@@ -158,7 +158,7 @@ private:
       }
     }
     int detections = box_proposals.get_shape()[2];
-    int informations = box_proposals.get_shape()[1];
+    int information_count = box_proposals.get_shape()[1];
 
     float x_factor = (float)frame.msg->width / (float)model_shape.width;
     float y_factor = (float)frame.msg->height / (float)model_shape.height;
@@ -221,7 +221,7 @@ private:
     vector<float>::iterator data = transposed_output_buffer.begin();
     for (int i = 0; i < detections; ++i) {
       process_box(data, i);
-      data += informations;
+      data += information_count;
     }
     vector<int> nms_result;
     cv::dnn::NMSBoxes(boxes, confidences, modelScoreThreshold, modelNMSThreshold, nms_result);

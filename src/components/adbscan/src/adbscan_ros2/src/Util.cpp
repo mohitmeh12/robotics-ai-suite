@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright (C) 2025 Intel Corporation
+// Copyright (C) 2026 Intel Corporation
 
 #include "Util.hpp"
 

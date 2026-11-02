@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright (C) 2025 Intel Corporation
+// Copyright (C) 2026 Intel Corporation
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -29,10 +29,12 @@
 #define BOOST_MPL_LIMIT_VECTOR_SIZE 50
 #include <boost/mpl/vector.hpp>
 
+#include "adbscan_core/clusterer.hpp"
 #include "ADBScan.h"
 #include "Util.hpp"
 
 Point_xyz doDBSCAN(
   void * p_Data, int LiDAR_data_size, int dimension, Point_xyz target_loc, int & num_blocked_frame,
-  vector<Obstacle> & obstacle_list);
+  vector<Obstacle> & obstacle_list,
+  adbscan_core::Backend backend = adbscan_core::Backend::LegacyCpu);
 double diff(timespec start, timespec end);

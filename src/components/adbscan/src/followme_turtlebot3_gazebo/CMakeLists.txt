@@ -1,4 +1,4 @@
-# Copyright (C) 2025 Intel Corporation
+# Copyright (C) 2026 Intel Corporation
 #
 # SPDX-License-Identifier: Apache-2.0
 # ##############################################################################
@@ -76,6 +76,8 @@ ament_target_dependencies(${EXEC_NAME} ${dependencies})
 # ##############################################################################
 install(TARGETS ${EXEC_NAME} DESTINATION lib/${PROJECT_NAME})
 
+install(PROGRAMS scripts/guide_wander.py DESTINATION lib/${PROJECT_NAME})
+
 install(DIRECTORY launch models rviz urdf scripts
         DESTINATION share/${PROJECT_NAME}/)
 
@@ -121,10 +123,19 @@ configure_ros_debian_package_with_metadata(
     "ros-${ROS_DISTRO}-tf2"
     "ros-${ROS_DISTRO}-ros-gz-sim"
   DEPENDS
+    "ros-${ROS_DISTRO}-adbscan-ros2-follow-me"
+    "ros-${ROS_DISTRO}-ament-index-python"
     "ros-${ROS_DISTRO}-geometry-msgs"
+    "ros-${ROS_DISTRO}-launch"
+    "ros-${ROS_DISTRO}-launch-ros"
     "ros-${ROS_DISTRO}-nav-msgs"
     "ros-${ROS_DISTRO}-rclcpp"
+    "ros-${ROS_DISTRO}-rclpy"
+    "ros-${ROS_DISTRO}-robot-state-publisher"
+    "ros-${ROS_DISTRO}-ros2launch"
+    "ros-${ROS_DISTRO}-ros-gz-bridge"
     "ros-${ROS_DISTRO}-sensor-msgs"
     "ros-${ROS_DISTRO}-tf2"
     "ros-${ROS_DISTRO}-ros-gz-sim"
+    "ros-${ROS_DISTRO}-turtlebot3-gazebo"
 )

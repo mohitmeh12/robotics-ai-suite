@@ -39,7 +39,7 @@ install(TARGETS
 
 its_enable_debian_package(
   PACKAGE_BASENAME "its-reloc-benchmarking"
-  PACKAGE_DESCRIPTION "Benchmarking package part of relocalization module"
+  PACKAGE_DESCRIPTION "ITS Planner relocalization benchmarking package"
   CHANGELOG_PATH "${CMAKE_CURRENT_SOURCE_DIR}/../${ROS_DISTRO}/debian/changelog"
   BUILD_DEPENDS
     "ros-${ROS_DISTRO}-ament-cmake"

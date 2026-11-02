@@ -1,4 +1,4 @@
-# Copyright (C) 2025 Intel Corporation
+# Copyright (C) 2026 Intel Corporation
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -23,5 +23,27 @@ path = [
     "**/*.txt",
     "**/*.json",
 ]
-SPDX-FileCopyrightText = "2025 Intel Corporation"
+SPDX-FileCopyrightText = "2026 Intel Corporation"
+SPDX-License-Identifier = "Apache-2.0"
+
+[[annotations]]
+path = [
+    "src/adbscan_core/CMakeLists.txt",
+    "src/adbscan_core/README.md",
+    "src/adbscan_core/package.xml",
+    "src/adbscan_core/include/**/*.hpp",
+    "src/adbscan_core/src/**/*.cpp",
+    "src/adbscan_core/test/**/*.cpp",
+    "src/nav2_dynamic_msgs/CMakeLists.txt",
+    "src/nav2_dynamic_msgs/package.xml",
+    "src/nav2_dynamic_msgs/msg/*.msg",
+    "src/followme_turtlebot3_gazebo/launch/follow_me.launch.py",
+    "src/followme_turtlebot3_gazebo/scripts/guide_wander.py",
+    "docs/adbscan-behavior-baseline.md",
+    "internal/**",
+    "tests/benchmark/benchmark_core.cpp",
+    "tests/oneapi/test_oneapi_neighbors.cpp",
+    "tests/test_follow_me_application.py",
+]
+SPDX-FileCopyrightText = "2026 Intel Corporation"
 SPDX-License-Identifier = "Apache-2.0"

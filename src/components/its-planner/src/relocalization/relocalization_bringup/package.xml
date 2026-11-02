@@ -10,7 +10,7 @@ SPDX-License-Identifier: Apache-2.0
 <package format="3">
   <name>relocalization_bringup</name>
   <version>0.0.0</version>
-  <description>Relocation bring up package</description>
+  <description>Relocalization bringup package.</description>
   <maintainer email="eci.maintainer@intel.com">ECI Maintainer</maintainer>
   <license>Apache-2.0</license>
 

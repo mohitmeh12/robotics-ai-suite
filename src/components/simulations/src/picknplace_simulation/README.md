@@ -13,7 +13,7 @@ simulation solution.
 
 | Package | Description |
 | --- | --- |
-| [`picknplace`](../picknplace/README.md) | Main demo package — launch files, robot controllers, and state machines |
+| [`picknplace`](picknplace/README.md) | Main demo package — launch files, robot controllers, and state machines |
 | [`robot_config`](robot_config/) | URDF models, MoveIt2 configs, and Nav2 parameters for the AMR and UR5 arms |
 | [`gazebo_plugins`](gazebo_plugins/) | Custom Gazebo plugins: `VacuumToolPlugin` and `ConveyorBeltPlugin` |
 
@@ -26,5 +26,5 @@ simulation solution.
 
 ## Quick Start
 
-See [`picknplace/README.md`](../picknplace/README.md) for full installation,
+See [`picknplace/README.md`](picknplace/README.md) for full installation,
 build, and run instructions.

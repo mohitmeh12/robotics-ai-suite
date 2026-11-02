@@ -1,9 +1,19 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright (C) 2025 Intel Corporation
+// Copyright (C) 2026 Intel Corporation
 
 #include <gtest/gtest.h>
 
-#include "../src/Util.hpp"
+#include <cstdlib>
+#include <fstream>
+
+#include "adbscan_core/clusterer.hpp"
+#include "../src/doDBSCAN.hpp"
+
+Config_params_t CONFIG_PARAMS;
+
+ADBSCAN_Result_t adaptive_parameters(
+  LiDAR_data_3D_t * points, FPDS_t * k, FPDS_t * k_floor, FPDS_t * radius, FPDS_t * radius_cont,
+  Adaptive_params_t * params, INT32_t count);
 
 TEST(ADBSCANTest, adbscan_cluster_test)
 {
@@ -41,4 +51,132 @@ TEST(ADBSCANTest, adbscan_cluster_test)
 
   std::vector<Cluster> clusters = get_clusters(points_in_frame);
   EXPECT_EQ(clusters.size(), 7);
+}
+
+TEST(ADBSCANTest, legacy_cpu_matches_core_for_clusters_and_noise)
+{
+  std::vector<LiDAR_data_3D_t> legacy_points = {
+    {{0.0f, 0.0f, 0.0f}}, {{0.1f, 0.0f, 0.0f}}, {{0.2f, 0.1f, 0.0f}}, {{0.5f, 0.0f, 0.0f}},
+    {{3.0f, 1.0f, 1.0f}}, {{3.1f, 1.1f, 1.0f}}, {{3.2f, 1.0f, 1.0f}}, {{8.0f, 0.0f, 0.0f}},
+  };
+  std::vector<adbscan_core::Point> core_points;
+  for (const auto & point : legacy_points) {
+    core_points.push_back({point.val[0], point.val[1], point.val[2]});
+  }
+  std::vector<double> k(legacy_points.size(), 2.0);
+  std::vector<double> radius(legacy_points.size(), 0.35);
+  std::vector<INT32_t> legacy_labels(legacy_points.size(), 0);
+  std::vector<INT32_t> legacy_types(legacy_points.size(), 0);
+
+  dbscan_adaptiveK(
+    legacy_points.data(), k.data(), radius.data(), legacy_labels.data(), legacy_types.data(),
+    legacy_points.size());
+  const auto core = adbscan_core::cluster(core_points, k, radius);
+
+  EXPECT_EQ(core.labels, legacy_labels);
+  EXPECT_EQ(core.types, legacy_types);
+  EXPECT_EQ(core.clusters.size(), 2u);
+  EXPECT_EQ(core.labels.back(), -1);
+}
+
+TEST(ADBSCANTest, legacy_cpu_matches_core_with_adaptive_parameters)
+{
+  std::vector<LiDAR_data_3D_t> legacy_points = {
+    {{0.0f, 0.0f, 0.0f}}, {{0.1f, 0.0f, 0.0f}}, {{0.2f, 0.0f, 0.0f}}, {{0.3f, 0.0f, 0.0f}},
+    {{2.0f, 2.0f, 0.1f}}, {{2.1f, 2.0f, 0.1f}}, {{2.2f, 2.0f, 0.1f}}, {{5.0f, 5.0f, 1.0f}},
+  };
+  std::vector<adbscan_core::Point> core_points;
+  for (const auto & point : legacy_points) {
+    core_points.push_back({point.val[0], point.val[1], point.val[2]});
+  }
+  std::vector<double> k = {2, 2, 3, 2, 2, 2, 2, 3};
+  std::vector<double> radius = {0.18, 0.18, 0.25, 0.18, 0.20, 0.20, 0.20, 0.10};
+  std::vector<INT32_t> legacy_labels(legacy_points.size(), 0);
+  std::vector<INT32_t> legacy_types(legacy_points.size(), 0);
+
+  dbscan_adaptiveK(
+    legacy_points.data(), k.data(), radius.data(), legacy_labels.data(), legacy_types.data(),
+    legacy_points.size());
+  const auto core = adbscan_core::cluster(core_points, k, radius);
+
+  EXPECT_EQ(core.labels, legacy_labels);
+  EXPECT_EQ(core.types, legacy_types);
+  EXPECT_EQ(core.clusters.size(), 2u);
+  EXPECT_EQ(core.labels.back(), -1);
+}
+
+TEST(ADBSCANTest, recorded_realsense_frame_matches_core)
+{
+  const char * frame_path = std::getenv("ADBSCAN_PARITY_XYZ");
+  if (!frame_path) {
+    GTEST_SKIP() << "Set ADBSCAN_PARITY_XYZ to a sampled XYZ frame";
+  }
+  std::ifstream frame(frame_path);
+  ASSERT_TRUE(frame.is_open());
+  std::vector<LiDAR_data_3D_t> legacy_points;
+  std::vector<adbscan_core::Point> core_points;
+  float x, y, z;
+  while (frame >> x >> y >> z) {
+    legacy_points.push_back({{x, y, z}});
+    core_points.push_back({x, y, z});
+  }
+  ASSERT_TRUE(frame.eof());
+  ASSERT_GE(legacy_points.size(), 3u);
+
+  CONFIG_PARAMS.Lidar_type = "RS";
+  CONFIG_PARAMS.scale_factor = 1;
+  Adaptive_params_t adaptive{2, 0, 0};
+  std::vector<double> k(legacy_points.size()), k_floor(legacy_points.size());
+  std::vector<double> radius(legacy_points.size()), radius_cont(legacy_points.size());
+  ASSERT_EQ(
+    adaptive_parameters(
+      legacy_points.data(), k.data(), k_floor.data(), radius.data(), radius_cont.data(), &adaptive,
+      legacy_points.size()),
+    ADBSCAN_SUCCESS);
+  std::vector<INT32_t> legacy_labels(legacy_points.size(), 0);
+  std::vector<INT32_t> legacy_types(legacy_points.size(), 0);
+
+  dbscan_adaptiveK(
+    legacy_points.data(), k_floor.data(), radius.data(), legacy_labels.data(), legacy_types.data(),
+    legacy_points.size());
+  const auto core = adbscan_core::cluster(core_points, k_floor, radius);
+
+  EXPECT_EQ(core.labels, legacy_labels);
+  EXPECT_EQ(core.types, legacy_types);
+  EXPECT_FALSE(core.clusters.empty());
+}
+
+TEST(ADBSCANTest, core_clustering_preserves_follow_me_target_tracking)
+{
+  CONFIG_PARAMS = {};
+  CONFIG_PARAMS.subsample_ratio = 1;
+  CONFIG_PARAMS.x_filter_back = 0;
+  CONFIG_PARAMS.y_filter_right = -2;
+  CONFIG_PARAMS.y_filter_left = 2;
+  CONFIG_PARAMS.z_filter = -1;
+  CONFIG_PARAMS.Z_based_ground_removal = 1;
+  CONFIG_PARAMS.base = 1;
+  CONFIG_PARAMS.Lidar_type = "3D";
+  CONFIG_PARAMS.tracking_radius = 0.5;
+  CONFIG_PARAMS.max_frame_blocked = 2;
+
+  const LiDAR_data_4D_t points[] = {
+    {{1.0f, 0.0f, 0.0f, 0.0f}},
+    {{1.1f, 0.1f, 0.1f, 0.0f}},
+    {{1.2f, 0.0f, 0.0f, 0.0f}},
+    {{4.0f, 1.0f, 1.0f, 0.0f}},
+  };
+  void * data = malloc(sizeof(points));
+  ASSERT_NE(data, nullptr);
+  memcpy(data, points, sizeof(points));
+  int blocked_frames = 0;
+  std::vector<Obstacle> obstacles;
+
+  const auto target =
+    doDBSCAN(data, sizeof(points), 3, {1.0f, 0.0f, 0.0f}, blocked_frames, obstacles);
+
+  ASSERT_EQ(obstacles.size(), 1u);
+  EXPECT_NEAR(target.x, 1.1f, 1e-5);
+  EXPECT_NEAR(target.y, 0.03333f, 1e-4);
+  EXPECT_EQ(blocked_frames, 2);
 }

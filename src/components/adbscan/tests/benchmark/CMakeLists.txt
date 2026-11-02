@@ -1,0 +1,8 @@
+cmake_minimum_required(VERSION 3.16)
+project(adbscan_core_benchmark LANGUAGES CXX)
+
+find_package(adbscan_core REQUIRED)
+
+add_executable(adbscan_core_benchmark benchmark_core.cpp)
+target_compile_features(adbscan_core_benchmark PRIVATE cxx_std_17)
+target_link_libraries(adbscan_core_benchmark PRIVATE adbscan_core::adbscan_core)

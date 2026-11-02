@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright (C) 2025 Intel Corporation
+// Copyright (C) 2026 Intel Corporation
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@
 #include "rclcpp/rclcpp.hpp"
 #include "sensor_msgs/msg/laser_scan.hpp"
 #include "sensor_msgs/msg/point_cloud2.hpp"
+#include "std_msgs/msg/bool.hpp"
 #include "std_msgs/msg/string.hpp"
 #include "visualization_msgs/msg/marker.hpp"
 #include "visualization_msgs/msg/marker_array.hpp"
@@ -193,6 +194,8 @@ public:
     this->declare_parameter("max_frame_blocked", int(2));
     this->declare_parameter("tracking_radius", double(0.2));
     this->declare_parameter("optical_frame", false);
+    this->declare_parameter("start_enabled", true);
+    this->declare_parameter("core_backend", std::string("legacy_cpu"));
 #endif  // PRE_ROS_HUMBLE
 
     rclcpp::Parameter Lidar_type_param = this->get_parameter("Lidar_type");
@@ -238,6 +241,20 @@ public:
     CONFIG_PARAMS.max_frame_blocked = max_frame_blocked_param.as_int();
     CONFIG_PARAMS.tracking_radius = tracking_radius.as_double();
     CONFIG_PARAMS.optical_frame = this->get_parameter("optical_frame").as_bool();
+    following_enabled_ = this->get_parameter("start_enabled").as_bool();
+    const auto backend = this->get_parameter("core_backend").as_string();
+    if (backend == "legacy_cpu") {
+      core_backend_ = adbscan_core::Backend::LegacyCpu;
+    } else if (backend == "pcl_kdtree") {
+      core_backend_ = adbscan_core::Backend::PclKdTree;
+    } else if (backend == "oneapi_kdtree") {
+      core_backend_ = adbscan_core::Backend::OneApiKdTree;
+    } else if (backend == "oneapi_octree") {
+      core_backend_ = adbscan_core::Backend::OneApiOctree;
+    } else {
+      throw std::invalid_argument("Unknown core_backend: " + backend);
+    }
+    adbscan_core::cluster({}, {}, {}, core_backend_);
 
     target_loc.x = CONFIG_PARAMS.init_tgt_loc;  // 0.5;
     target_loc.y = 0;
@@ -270,6 +287,13 @@ public:
     // publisher_ = this->create_publisher<nav2_dynamic_msgs::msg::ObstacleArray>("obstacle_array", 1);
     // publisher_ = this->create_publisher<geometry_msgs::msg::Twist>("turtle1/cmd_vel", 1);  //jcao7
     publisher_ = this->create_publisher<geometry_msgs::msg::Twist>("cmd_vel", 1);
+    subscription_follow_enabled_ = this->create_subscription<std_msgs::msg::Bool>(
+      "follow_enabled", 10, [this](const std_msgs::msg::Bool::SharedPtr message) {
+        following_enabled_ = message->data;
+        if (!following_enabled_) {
+          publisher_->publish(geometry_msgs::msg::Twist{});
+        }
+      });
     publisher_markers_ =
       this->create_publisher<visualization_msgs::msg::MarkerArray>("marker_array", rclcpp::QoS(1));
   }
@@ -323,7 +347,7 @@ private:
       vector<Obstacle> obstacles;
       new_target_loc = doDBSCAN(
         p_Data, point_list.size() * sizeof(LiDAR_data_4D_t), 2, this->target_loc, nbr_frame_blocked,
-        obstacles);
+        obstacles, core_backend_);
 
       if (new_target_loc.x > 0) {
         // target found; if no target found, new target_loc.x was set to -1.0
@@ -348,6 +372,7 @@ private:
         this->target_loc.z = 0;
         this->target_found = false;
         this->nbr_frame_blocked = CONFIG_PARAMS.max_frame_blocked;  // 5
+        publish_message();
       }
     } else {
       RCLCPP_ERROR(this->get_logger(), "Failed to convert input data");
@@ -402,12 +427,12 @@ private:
       if (Lidar_type_ == "3D") {
         new_target_loc = doDBSCAN(
           p_Data, point_list.size() * sizeof(LiDAR_data_4D_t), 3, this->target_loc,
-          nbr_frame_blocked, obstacles);
+          nbr_frame_blocked, obstacles, core_backend_);
       } else if (Lidar_type_ == "RS") {
         // subsampling but not filtering
         new_target_loc = doDBSCAN(
           p_Data, point_list.size() * sizeof(LiDAR_data_4D_t), 4, this->target_loc,
-          nbr_frame_blocked, obstacles);
+          nbr_frame_blocked, obstacles, core_backend_);
       }
 
       // marker array msg to be publish
@@ -447,7 +472,7 @@ private:
   {
     auto message = geometry_msgs::msg::Twist();
 
-    if (target_found == false) {
+    if (!following_enabled_ || !target_found) {
       // target not found, set linear and angular velocity to 0.0
       message.linear.x = 0.0;
       message.angular.z = 0.0;
@@ -511,12 +536,15 @@ private:
   bool Verbose_;
   rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr subscription_2D_;
   rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr subscription_3D_;
+  rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr subscription_follow_enabled_;
   // rclcpp::Publisher<nav2_dynamic_msgs::msg::ObstacleArray>::SharedPtr publisher_;
   rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr publisher_;
   rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr publisher_markers_;
   int count_;
   Point_xyz target_loc;
   bool target_found;
+  bool following_enabled_;
+  adbscan_core::Backend core_backend_ = adbscan_core::Backend::LegacyCpu;
   int nbr_frame_blocked;                   // used for occlusion handling
   clockid_t clk_id = CLOCK_MONOTONIC_RAW;  // CLOCK_REALTIME;
 };

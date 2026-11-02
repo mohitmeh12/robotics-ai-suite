@@ -772,7 +772,7 @@ uv run python src/monitor_resources.py --memory --log my_resources.log
 ## 📚 Documentation
 
 - **Quick Start:** See [QUICK_START.md](QUICK_START.md)
-- **Full Details:** See updated [README.md](../README.md)
+- **Full Details:** See updated [README.md](README.md)
 - **Help:** Run `uv run python src/monitor_stack.py --help` or `make help`
 
 ---

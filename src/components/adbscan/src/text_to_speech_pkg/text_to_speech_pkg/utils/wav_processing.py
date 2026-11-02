@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: Apache-2.0
-# Copyright (C) 2025 Intel Corporation
+# Copyright (C) 2026 Intel Corporation
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -25,15 +25,15 @@ import numpy as np
 
 
 # for WaveRNN approach (https://github.com/fatchord/WaveRNN), first step before upsample
-def pad_tensor(x, pad, side='both'):
+def pad_tensor(x, pad, side="both"):
     # NB - this is just a quick method i need right now
     # i.e., it won't generalise to other shapes/dims
     b, t, c = x.shape
-    total = t + 2 * pad if side == 'both' else t + pad
+    total = t + 2 * pad if side == "both" else t + pad
     padded = np.zeros((b, total, c), dtype=np.float)
-    if side in ('before', 'both'):
+    if side in ("before", "both"):
         padded[:, pad: pad + t, :] = x  # fmt: skip
-    elif side == 'after':
+    elif side == "after":
         padded[:, :t, :] = x
     return padded
 
@@ -70,7 +70,7 @@ def fold_with_overlap(x, target, overlap):
     num_folds = (total_len - overlap) // (target + overlap)
     if num_folds < 1:
         raise ValueError(
-            'Too short mel-spectrogram with width {0}. Try longer sentence.'.format(total_len)
+            "Too short mel-spectrogram with width {0}. Try longer sentence.".format(total_len)
         )
     log_2 = math.log2(num_folds)
     optimal_batch_sz = 2 ** int(math.ceil(log_2))
@@ -96,7 +96,7 @@ def fold_with_overlap(x, target, overlap):
     if remaining != 0:
         num_folds += 1
         padding = target + 2 * overlap - remaining
-        x = pad_tensor(x, padding, side='after')
+        x = pad_tensor(x, padding, side="after")
 
     folded = np.zeros((num_folds, target + 2 * overlap, features), dtype=np.float)
 

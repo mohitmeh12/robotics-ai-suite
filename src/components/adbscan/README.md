@@ -16,83 +16,75 @@ ADBSCAN (Adaptive Density-Based Spatial Clustering of Applications with Noise) i
 
 ### What This Repository Provides
 
-This repository provides both the standalone ADBSCAN clustering perception pipeline and a complete multi-modal "Follow-Me" AMR reference application with simulation and hardware deployment assets:
+This repository provides both the core ADBSCAN clustering library, the standalone ROS 2 perception node, and a self-contained "Follow-Me" AMR reference application with simulation assets:
 
-1. **Perception & Spatial Clustering (`adbscan_ros2`)**
+1. **Core Clustering Library (`adbscan_core`)**
+   - Lightweight, standalone C++ library implementing range-adaptive DBSCAN (`cluster` and `cluster_frame`).
+   - Supports multiple neighbor-search backends: `legacy_cpu`, `pcl_kdtree`, and hardware-accelerated SYCL `oneapi_kdtree` and `oneapi_octree`.
+   - Independent of ROS message types, optical transforms, and middleware.
+   - See the [C++ Developer Integration Guide](src/adbscan_core/DEV_GUIDE.md) for CMake integration, code examples, and sensor parameter tuning.
+
+2. **Perception & Spatial Clustering (`adbscan_ros2`)**
    - Ingests 2D LiDAR (`sensor_msgs/LaserScan`), 3D LiDAR (`sensor_msgs/PointCloud2`), or Intel® RealSense™ depth data.
-   - Computes range-adaptive bounding boxes and clusters in real time.
+   - Computes range-adaptive bounding boxes and clusters in real time using `adbscan_core`.
    - Publishes segmented obstacles using `nav2_dynamic_msgs::msg::ObstacleArray`.
+   - The [nav2_dynamic_msgs](src/nav2_dynamic_msgs/README.md) package in this repository maintains the `Obstacle` and `ObstacleArray` interfaces.
 
-2. **AMR Reference Application (`adbscan_ros2_follow_me`)**
-   - Tracks a designated person using ADBSCAN cluster centroids.
+3. **AMR Reference Application (`adbscan_ros2_follow_me`)**
+   - Self-contained target follower tracking cluster centroids using `adbscan_core`.
    - Publishes differential-drive navigation commands (`geometry_msgs/msg/Twist`).
-   - Supports four operating modes combining LiDAR or RealSense depth tracking with optional gesture and voice interaction.
+   - Supports 2D LiDAR and RealSense depth tracking with optional runtime `/follow_enabled` boolean activation.
 
-3. **Multi-Modal Interaction Packages (Intel® OpenVINO™)**
-   - `gesture_recognition_pkg`: Visual hand-gesture recognition for robot start/stop and direction control.
-   - `speech_recognition_pkg`: Offline voice command parsing using OpenVINO.
-   - `text_to_speech_pkg`: Audio feedback and status prompts.
-   - `follow_me_interfaces`: Custom ROS 2 interfaces, actions, and services connecting the perception and interaction nodes.
-
-4. **Simulation, Hardware Deployment, and Verification**
-   - `followme_turtlebot3_gazebo`: Gazebo simulation environments for TurtleBot3.
-   - Ready-to-use launch files and configurations for commercial platforms (AAEON AMR, RPLidar, RealSense D435/D455).
+4. **Simulation, Deployment, and Verification**
+   - `followme_turtlebot3_gazebo`: Gazebo simulation environments (Harmonic / Fortress) for TurtleBot3 with an autonomous wandering guide robot.
+   - Launch files and configurations for AMR platforms and sensors (RPLidar, RealSense D435/D455).
    - Automated synthetic headless E2E testing with pytest and ROS 2 launch testing.
+
+5. **Experimental Multi-Modal Interaction Packages**
+   - `gesture_recognition_pkg`, `speech_recognition_pkg`, `text_to_speech_pkg`, and `follow_me_interfaces`: Prototype OpenVINO™ interaction nodes preserved for reference, not required for core following.
 
 ### Architecture
 
 ```mermaid
 graph TD
-    subgraph Sensors["Sensors & Input Modalities"]
+    subgraph Sensors["Sensors & Inputs"]
         Lidar2D["2D LiDAR<br/>(sensor_msgs/LaserScan)"]
         Lidar3D["3D LiDAR<br/>(sensor_msgs/PointCloud2)"]
         Realsense["Intel RealSense Depth Camera<br/>(sensor_msgs/PointCloud2)"]
-        RGB["RGB Camera Stream"]
-        AudioIn["Microphone / Audio Stream"]
+        EnableTopic["/follow_enabled<br/>(std_msgs/Bool, optional)"]
     end
 
-    subgraph Perception["Core Perception"]
-        ADBSCAN["adbscan_ros2 Node<br/>• Range-Adaptive Clustering<br/>• Bounding Box Generation"]
+    subgraph CoreLib["Algorithm Core"]
+        Core["adbscan_core Library<br/>• Range-Adaptive Clustering<br/>• Backends: LegacyCpu, PclKdTree, OneApiKdTree, OneApiOctree"]
     end
 
-    subgraph Interaction["Multi-Modal Interaction (OpenVINO)"]
-        Gesture["gesture_recognition_pkg<br/>Visual Gesture Recognition"]
-        Speech["speech_recognition_pkg<br/>Voice Command Recognition"]
-        TTS["text_to_speech_pkg<br/>Synthesized Audio Feedback"]
+    subgraph Perception["Perception Node"]
+        ADBSCAN["adbscan_ros2 Node<br/>• LaserScan / PointCloud2 Ingestion<br/>• Frame Preprocessing & Optical Conversion"]
     end
 
-    subgraph Interfaces["Communication Layer"]
-        ObsTopic["/obstacle_array<br/>(nav2_dynamic_msgs/ObstacleArray)"]
-        FMI["follow_me_interfaces<br/>(Custom MSGs & SRVs)"]
-    end
-
-    subgraph Application["AMR Application & Control"]
-        FollowMe["adbscan_ros2_follow_me Node<br/>• Target Person Tracking<br/>• State Machine & Mode Control<br/>• Trajectory & Velocity Generation"]
+    subgraph Application["AMR Application"]
+        FollowMe["adbscan_ros2_follow_me Node<br/>• Target Person Tracking<br/>• Trajectory & Velocity Generation"]
     end
 
     subgraph Targets["Execution & Actuation Targets"]
+        ObsTopic["/obstacle_array<br/>(nav2_dynamic_msgs/ObstacleArray)"]
         CmdVel["/cmd_vel<br/>(geometry_msgs/Twist)"]
         Gazebo["followme_turtlebot3_gazebo<br/>(Gazebo Simulation)"]
-        RealRobot["Physical AMR<br/>(AAEON, TurtleBot3, etc.)"]
-        Speaker["Speaker Audio Out"]
+        RealRobot["Physical AMR<br/>(TurtleBot3, etc.)"]
     end
 
     Lidar2D --> ADBSCAN
     Lidar3D --> ADBSCAN
     Realsense --> ADBSCAN
-    RGB --> Gesture
-    AudioIn --> Speech
+
+    Lidar2D --> FollowMe
+    Realsense --> FollowMe
+    EnableTopic --> FollowMe
+
+    ADBSCAN --> Core
+    FollowMe --> Core
 
     ADBSCAN --> ObsTopic
-    ObsTopic --> FollowMe
-
-    Gesture --> FMI
-    Speech --> FMI
-    FMI --> FollowMe
-
-    FollowMe -. Status / Prompts .-> TTS
-    TTS --> Speaker
-
     FollowMe --> CmdVel
     CmdVel --> Gazebo
     CmdVel --> RealRobot
@@ -166,7 +158,7 @@ Use this workflow to build, iterate, and run packages directly from the reposito
 3. **Verify Package Availability**:
 
    ```bash
-   ros2 pkg list | grep -E 'adbscan|follow_me|gesture|speech|text_to_speech'
+   ros2 pkg list | grep -E 'adbscan|follow'
    ```
 
 ---
@@ -181,6 +173,18 @@ Use this workflow to generate release Debian packages (`.deb`) via CMake and CPa
    make package
    ```
 
+   Package builds are CPU-only by default for Humble. Jazzy enables Intel®
+   oneAPI™ SYCL acceleration by default and requires the oneAPI compiler and
+   development packages:
+
+   ```bash
+   make package ROS_DISTRO=jazzy
+   ```
+
+   Use `WITH_ONEAPI=OFF` to build CPU-only Jazzy packages. The oneAPI package
+   build is verified on Jazzy; on the current Humble build image, `icpx` 2026.1
+   fails compiling ROS2 against PCL's Boost.MPL headers.
+
    Native `.deb` packages will be placed into `build/debian-packages/packages/`:
 
    ```bash
@@ -188,13 +192,11 @@ Use this workflow to generate release Debian packages (`.deb`) via CMake and CPa
    ```
 
    ```text
-   ros-jazzy-adbscan-ros2_2.3-1_amd64.deb
-   ros-jazzy-adbscan-ros2-follow-me_2.3-1_amd64.deb
-   ros-jazzy-follow-me-interfaces_2.3-1_amd64.deb
-   ros-jazzy-gesture-recognition-pkg_2.3-1_amd64.deb
-   ros-jazzy-speech-recognition-pkg_2.3-1_amd64.deb
-   ros-jazzy-text-to-speech-pkg_2.3-1_amd64.deb
-   ros-jazzy-followme-turtlebot3-gazebo_2.3-1_amd64.deb
+   ros-jazzy-adbscan-core_0.1.0-2_amd64.deb
+   ros-jazzy-nav2-dynamic-msgs_0.0.1-1_amd64.deb
+   ros-jazzy-adbscan-ros2_2.3-4_amd64.deb
+   ros-jazzy-adbscan-ros2-follow-me_2.3-4_amd64.deb
+   ros-jazzy-followme-turtlebot3-gazebo_2.3-5_amd64.deb
    ```
 
 2. **Install Built Debian Packages**:
@@ -203,6 +205,12 @@ Use this workflow to generate release Debian packages (`.deb`) via CMake and CPa
    sudo apt update
    sudo apt install -y ./build/debian-packages/packages/*.deb
    ```
+
+   Keep the AMR, ROS 2, and Intel oneAPI APT repositories configured when
+   installing the bundle. The AMR repository's PCL packages can depend on Intel
+   compiler runtimes even when ADBSCAN is built with `WITH_ONEAPI=OFF`; this
+   does not enable accelerated clustering. OneAPI execution additionally needs
+   a supported device runtime and drivers.
 
 ---
 
@@ -231,6 +239,14 @@ The repository employs a multi-tiered testing strategy to validate algorithm cor
   *(Builds with `-DBUILD_TESTING=ON`, executes all package-level unit tests sequentially, and returns non-zero on test failures).*
 
 ### 2. End-to-End (E2E) Headless Launch Tests
+
+- **Test prerequisites**: On a minimal package-only installation, install the
+  launch-test tools separately; they are not application runtime dependencies:
+
+  ```bash
+  sudo apt install python3-pytest ros-${ROS_DISTRO}-launch-testing-ros \
+    ros-${ROS_DISTRO}-sensor-msgs-py
+  ```
 
 - **What is tested**: Full ROS 2 node lifecycle and topic publication using `launch_testing` and `pytest` ([tests/test_adbscan_topic_publication.py](tests/test_adbscan_topic_publication.py)).
 - **Why we test it**: Algorithmic tests run in isolation; E2E launch tests verify that the actual node executables (`adbscan_pub`) spin up cleanly in the ROS graph and advertise expected topics (`/Obstacle_Array` with type `nav2_dynamic_msgs/msg/ObstacleArray`).
@@ -266,6 +282,60 @@ The repository employs a multi-tiered testing strategy to validate algorithm cor
 
   Outputs summary to `testout/test-summary.md`.
 
+### 5. Release Package Verification
+
+The release matrix has been exercised using the live AMR repository's PCL
+`1.15.1-2` and, for Jazzy acceleration, FLANN OneAPI `1.9.2-1`:
+
+| Profile | Source unit results | Installed SDK consumer | Installed ROS launch tests |
+| --- | --- | --- | --- |
+| Humble, CPU-only | 39 tests, 0 failures, 3 skipped | 18 passed | Passed |
+| Jazzy, OneAPI on SYCL CPU | 39 tests, 0 failures, 4 skipped | 18 passed | Passed with each perception backend |
+| Jazzy, OneAPI on SYCL GPU | 27 tests, 0 failures, 4 skipped | 18 passed | Passed |
+
+The standalone OneAPI parity suite also passed all 27 enabled tests from both
+the source build and the installed Jazzy libraries. Both ROS launch tests accept
+`ADBSCAN_TEST_BACKEND` to select an optional backend; without it, the follower
+launch test retains its configured default CPU backend.
+
+For package verification, install all five generated packages into fresh
+Ubuntu 22.04/24.04 containers with the required APT repositories configured.
+Before adding test tools, check shared-library resolution, `ros2 run` startup,
+and `ros2 launch followme_turtlebot3_gazebo follow_me.launch.py sensor:=realsense --show-args`.
+Then install the separate test prerequisites described above, build an external
+CMake consumer against `adbscan_core::adbscan_core`, and run the launch tests
+against the installed nodes. Source only `/opt/ros/<distro>/setup.bash`; do not
+mount a workspace overlay or source the oneAPI developer environment.
+
+The CPU validation above does not certify a complete Gazebo simulation or
+recorded/live RealSense behavior. The recorded RealSense test remains skipped
+without its external fixture; the existing RealSense tuning is unchanged.
+
+#### GPU Execution Follow-up
+
+The installed Jazzy bundle was also exercised on an Intel Panther Lake GPU
+(`8086:b0a0`), using the host's `xe` driver and a container with
+`/dev/dri/renderD128` exposed. The Kobuk PPA
+(`ppa:kobuk-team/intel-graphics`) provided GPU userspace drivers
+`26.31.39395.16-1~24.04~ppa1` and Level Zero loader `1.32.0-1~24.04~ppa1`.
+
+With `ONEAPI_DEVICE_SELECTOR=level_zero:gpu`, the standalone parity suite passed
+27/27 tests, the installed SDK consumer passed 18/18, and both perception and
+follower launch tests passed with `oneapi_kdtree` and `oneapi_octree`. The default
+CPU launch tests also passed after adding optional follower backend selection.
+
+Initialize the installed oneAPI environment before GPU execution:
+
+```bash
+source /opt/ros/jazzy/setup.bash
+source /opt/intel/oneapi/setvars.sh
+export ONEAPI_DEVICE_SELECTOR=level_zero:gpu
+```
+
+A follow-up using this standard setup passed all 27 parity tests and the
+perception/follower octree launch tests without manually modifying library
+paths. The setup script supplies the required runtime paths, including UMF.
+
 ## Development and Quality Assurance
 
 The codebase enforces strict code formatting, linting, licensing, and CI standards to maintain repository health and prevent regressions.
@@ -282,7 +352,7 @@ This runs:
 
 - `clang-format` on C/C++ files using the ROS 2 Jazzy rules defined in [.clang-format](.clang-format).
 - `ruff format` and `ruff check --fix` on Python scripts following [.ruff.toml](.ruff.toml).
-- `markdownlint --fix` on Markdown documents using [.github/linters/.markdown-lint.yml](.github/linters/.markdown-lint.yml).
+- `markdownlint` (or `markdownlint-cli2` if unavailable) with `--fix` on Markdown documents using [.github/linters/.markdown-lint.yml](.github/linters/.markdown-lint.yml).
 
 ### Linters & Static Analysis
 
@@ -301,7 +371,7 @@ You can also run individual linters targeting specific languages or files:
 | `make lint-bash` | `shellcheck` | Bash script error and syntax checking |
 | `make lint-yaml` | `yamllint` | YAML formatting against [.github/linters/.yaml-lint.yml](.github/linters/.yaml-lint.yml) |
 | `make lint-json` | `python3 -m json.tool` | JSON syntax validation (e.g., [robotics-project.json](robotics-project.json)) |
-| `make lint-markdown` | `markdownlint` | Markdown document rules via [.github/linters/.markdown-lint.yml](.github/linters/.markdown-lint.yml) |
+| `make lint-markdown` | `markdownlint` or `markdownlint-cli2` | Markdown document rules via [.github/linters/.markdown-lint.yml](.github/linters/.markdown-lint.yml) |
 | `make lint-actionlint` | `actionlint` | GitHub Actions workflow syntax via [.github/linters/actionlint.yml](.github/linters/actionlint.yml) |
 
 ### License Compliance (REUSE)
@@ -359,11 +429,11 @@ Ensure your workspace environment is active (`source install/setup.bash` or `set
 Launch the core clustering node configured for 2D LiDAR or Intel® RealSense™:
 
 ```bash
-# For 2D LiDAR input
-ros2 launch adbscan_ros2 play_demo_lidar_launch.py
+# For live 2D LiDAR input
+ros2 run adbscan_ros2 adbscan_sub --ros-args --params-file "$(ros2 pkg prefix adbscan_ros2)/share/adbscan_ros2/config/adbscan_sub_2D.yaml"
 
-# For Intel RealSense depth camera input
-ros2 launch adbscan_ros2 play_demo_realsense_launch.py
+# For live Intel RealSense depth camera input
+ros2 run adbscan_ros2 adbscan_sub --ros-args --params-file "$(ros2 pkg prefix adbscan_ros2)/share/adbscan_ros2/config/adbscan_sub_RS.yaml"
 ```
 
 Verify that segmented obstacle clusters are being published:
@@ -374,14 +444,12 @@ ros2 topic echo /Obstacle_Array
 
 #### 2. Run the Follow-Me Gazebo Simulation
 
-Launch the multi-modal TurtleBot3 simulation in Gazebo:
+Launch the TurtleBot3 follower in Gazebo with a wandering guide robot:
 
 ```bash
-# LiDAR tracking with gesture and audio control
-ros2 launch followme_turtlebot3_gazebo lidar_gesture_audio.launch.py
-
-# RealSense depth camera tracking with gesture control
-ros2 launch followme_turtlebot3_gazebo rs_gesture.launch.py
+ros2 launch followme_turtlebot3_gazebo follow_me.launch.py
+# Or use the simulated depth camera:
+ros2 launch followme_turtlebot3_gazebo follow_me.launch.py sensor:=realsense
 ```
 
 ---
@@ -392,13 +460,21 @@ Detailed documentation, launch options, and hardware deployment guides are organ
 
 #### Package Guides
 
+- [src/adbscan_core/DEV_GUIDE.md](src/adbscan_core/DEV_GUIDE.md) — Integration guide for consuming `adbscan_core` in external codebases (CMake, C++ examples, sensor baselines).
+- [src/adbscan_core/README.md](src/adbscan_core/README.md) — Standalone C++ clustering library API (`cluster`, `cluster_frame`) and oneAPI build options.
+- [src/nav2_dynamic_msgs/README.md](src/nav2_dynamic_msgs/README.md) — Dynamic obstacle message interfaces (`Obstacle`, `ObstacleArray`) used by `adbscan_ros2` and Nav2.
 - [src/adbscan_ros2/Readme.md](src/adbscan_ros2/Readme.md) — Node architecture, sensor configuration YAMLs (2D LiDAR, 3D LiDAR, RealSense), topic schemas, and RViz visualization.
-- [docs/followme_turtlebot3_gazebo_readme.md](docs/followme_turtlebot3_gazebo_readme.md) — Gazebo simulation setup, TurtleBot3 models, spawn scripts, and launch scenarios.
+- [src/adbscan_ros2_follow_me/README.md](src/adbscan_ros2_follow_me/README.md) — AMR follower node architecture, target centroid tracking, velocity generation, and `/follow_enabled` activation.
+- [src/followme_turtlebot3_gazebo/README.md](src/followme_turtlebot3_gazebo/README.md) — Gazebo simulation setup (Harmonic/Fortress), robot models, spawn scripts, and launch scenarios.
+- [src/follow_me_interfaces/README.md](src/follow_me_interfaces/README.md) — Custom message types (`AudioCommand`, `GestureCategory`) for multi-modal interaction.
+- [src/gesture_recognition_pkg/README.md](src/gesture_recognition_pkg/README.md) — MediaPipe hand gesture recognition from camera RGB streams.
+- [src/speech_recognition_pkg/README.md](src/speech_recognition_pkg/README.md) — OpenVINO QuartzNet voice command recognition.
+- [src/text_to_speech_pkg/README.md](src/text_to_speech_pkg/README.md) — OpenVINO Forward Tacotron + MelGAN text-to-speech feedback.
 
 #### Follow-Me Application & Interaction
 
-- [docs/follow_me_readme.md](docs/follow_me_readme.md) — Complete follow-me application manual, four operating demo modes, and OpenVINO gesture/speech interaction.
-- [docs/follow_me_requirements.md](docs/follow_me_requirements.md) — System requirements, Python virtual environment setup, and OpenVINO model configuration.
+- [docs/follow_me_readme.md](docs/follow_me_readme.md) — Follower controls, simulation options, and sensor configuration.
+- [docs/follow_me_requirements.md](docs/follow_me_requirements.md) — ROS/Gazebo runtime and build dependencies.
 
 #### Sensor & Robot Hardware Deployment
 
@@ -409,7 +485,7 @@ Detailed documentation, launch options, and hardware deployment guides are organ
 #### Algorithm & Performance
 
 - [docs/IA-optimized-adbscan-algorithm.md](docs/IA-optimized-adbscan-algorithm.md) — Mathematical formulation of range-adaptive clustering and Intel Architecture CPU vectorization optimizations.
-- [Online Developer Guide](https://developer.robotics.intel.com/development-stack/components/optimized_solutions/adbscan-follow-me/) — Official Intel Robotics AI Suite component documentation.
+- [Online Developer Guide](https://developer.robotics.intel.com/development-stack/components/optimized_solutions/adbscan-follow-me/) — Official Intel Edge AI Suites component documentation.
 
 ## Try It in a Canonical Workshop
 

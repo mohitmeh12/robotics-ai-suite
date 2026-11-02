@@ -3,15 +3,21 @@
   "ci": {
     "manifest_namespace": "adbscan",
     "changelog_components": [
+      "adbscan_core",
+      "nav2_dynamic_msgs",
       "adbscan_ros2",
       "adbscan_ros2_follow_me",
-      "follow_me_interfaces",
-      "gesture_recognition_pkg",
-      "speech_recognition_pkg",
-      "text_to_speech_pkg",
       "followme_turtlebot3_gazebo"
     ],
     "package_components": [
+      {
+        "path": "adbscan_core",
+        "ros_package": "adbscan_core"
+      },
+      {
+        "path": "nav2_dynamic_msgs",
+        "ros_package": "nav2_dynamic_msgs"
+      },
       {
         "path": "adbscan_ros2",
         "ros_package": "adbscan_ros2"
@@ -19,22 +25,6 @@
       {
         "path": "adbscan_ros2_follow_me",
         "ros_package": "adbscan_ros2_follow_me"
-      },
-      {
-        "path": "follow_me_interfaces",
-        "ros_package": "follow_me_interfaces"
-      },
-      {
-        "path": "gesture_recognition_pkg",
-        "ros_package": "gesture_recognition_pkg"
-      },
-      {
-        "path": "speech_recognition_pkg",
-        "ros_package": "speech_recognition_pkg"
-      },
-      {
-        "path": "text_to_speech_pkg",
-        "ros_package": "text_to_speech_pkg"
       },
       {
         "path": "followme_turtlebot3_gazebo",

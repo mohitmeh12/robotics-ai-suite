@@ -13,6 +13,11 @@ VERSION := $(COMMIT)-$(DATE)
 
 ROS_DISTRO ?= humble
 PACKAGE_VERSION_SUFFIX ?=
+ifeq ($(ROS_DISTRO),humble)
+WITH_ONEAPI ?= OFF
+else
+WITH_ONEAPI ?= ON
+endif
 PROJECT_DEFINITION ?= $(ROOT_DIR)/robotics-project.json
 TEST_SUMMARY ?= $(ROOT_DIR)/testout/test-summary.md
 
@@ -32,6 +37,7 @@ PACKAGE_OUTPUT_DIR = $(ROOT_DIR)/build/debian-packages/packages
 BUILD_DEPENDS_OUTPUT_DIR = $(ROOT_DIR)/build/debian-build-deps
 MISSING_BUILD_DEPENDENCIES_FILE = $(BUILD_DEPENDS_OUTPUT_DIR)/missing-dependencies.txt
 UV ?= uv
+MARKDOWNLINT ?= $(shell command -v markdownlint || command -v markdownlint-cli2 || printf 'markdownlint')
 
 license-check:
 	@# Help: Perform a REUSE license check using docker container https://hub.docker.com/r/fsfe/reuse
@@ -46,7 +52,8 @@ package:
 		-DROS_DISTRO=$(ROS_DISTRO) \
 		-DADBSCAN_PACKAGE_OUTPUT_DIR=$(PACKAGE_OUTPUT_DIR) \
 		-DADBSCAN_PACKAGE_COMPONENTS="$(PACKAGE_COMPONENTS)" \
-		-DADBSCAN_PACKAGE_VERSION_SUFFIX=$(PACKAGE_VERSION_SUFFIX) && \
+		-DADBSCAN_PACKAGE_VERSION_SUFFIX=$(PACKAGE_VERSION_SUFFIX) \
+		-DADBSCAN_WITH_ONEAPI=$(WITH_ONEAPI) && \
 	cmake --build $(ROOT_DIR)/build/debian-packages --target package
 
 debian-build-deps:
@@ -54,6 +61,7 @@ debian-build-deps:
 	rm -rf $(BUILD_DEPENDS_OUTPUT_DIR) $(ROOT_DIR)/build/debian-build-deps-config
 	cmake -S $(ROOT_DIR) -B $(ROOT_DIR)/build/debian-build-deps-config \
 		-DROS_DISTRO=$(ROS_DISTRO) \
+		-DADBSCAN_WITH_ONEAPI=$(WITH_ONEAPI) \
 		-DADBSCAN_PACKAGE_COMPONENTS="$(PACKAGE_COMPONENTS)" \
 		-DADBSCAN_BUILD_DEPENDS_OUTPUT_DIR=$(BUILD_DEPENDS_OUTPUT_DIR) && \
 	cmake --build $(ROOT_DIR)/build/debian-build-deps-config --target debian-build-deps
@@ -108,7 +116,7 @@ test-e2e:
 	@# Help: Run synthetic headless launch tests from the active ROS prefix
 	mkdir -p testout
 	set +u && source /opt/ros/$(ROS_DISTRO)/setup.bash && set -u && \
-	if ! ros2 pkg prefix adbscan_ros2 >/dev/null 2>&1 && [[ -f "$(ROOT_DIR)/install/setup.bash" ]]; then \
+	if [[ -f "$(ROOT_DIR)/install/setup.bash" ]] && { ! ros2 pkg prefix adbscan_ros2 >/dev/null 2>&1 || ! ros2 pkg prefix adbscan_ros2_follow_me >/dev/null 2>&1; }; then \
 		set +u && source "$(ROOT_DIR)/install/setup.bash" && set -u; \
 	fi && \
 	export ROS_DOMAIN_ID=42 && /usr/bin/python3 -m pytest tests/ --junit-xml=testout/adbscan_e2e.xml
@@ -132,12 +140,16 @@ check-ci:
 tools-check:
 	@# Help: Verify locally installed developer tools
 	@missing=0; \
-	for tool in actionlint yamllint ruff shellcheck markdownlint clang-format ninja colcon docker python3; do \
+	for tool in actionlint yamllint ruff shellcheck clang-format ninja colcon docker python3; do \
 		if ! command -v "$$tool" >/dev/null; then \
 			echo "Missing required tool: $$tool" >&2; \
 			missing=1; \
 		fi; \
 	done; \
+	if ! command -v "$(MARKDOWNLINT)" >/dev/null; then \
+		echo "Missing required tool: markdownlint or markdownlint-cli2" >&2; \
+		missing=1; \
+	fi; \
 	exit "$$missing"
 
 format:
@@ -145,7 +157,7 @@ format:
 	git ls-files -z -- '*.c' '*.cc' '*.cpp' '*.cxx' '*.h' '*.hh' '*.hpp' '*.hxx' | xargs -0 -r -n1 sh -c 'test ! -e "$$1" || clang-format -i "$$1"' sh
 	git ls-files -z -- '*.py' | xargs -0 -r -n1 sh -c 'test ! -e "$$1" || ruff check --fix "$$1"' sh
 	git ls-files -z -- '*.py' | xargs -0 -r -n1 sh -c 'test ! -e "$$1" || ruff format "$$1"' sh
-	git ls-files -z -- '*.md' | xargs -0 -r markdownlint --config .github/linters/.markdown-lint.yml --fix
+	git ls-files -z -- '*.md' | xargs -0 -r $(MARKDOWNLINT) --config .github/linters/.markdown-lint.yml --fix
 
 clean:
 	@# Help: Remove local build, install, log, test, and package artifacts
@@ -179,7 +191,7 @@ lint-bash:
 
 lint-markdown:
 	@# Help: Run Markdown linting
-	git ls-files -z -- '*.md' | xargs -0 -r markdownlint --config .github/linters/.markdown-lint.yml
+	git ls-files -z -- '*.md' | xargs -0 -r $(MARKDOWNLINT) --config .github/linters/.markdown-lint.yml
 
 lint-clang-format lint-clang:
 	@# Help: Run C/C++ formatting linting

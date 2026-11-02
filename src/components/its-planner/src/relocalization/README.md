@@ -6,9 +6,10 @@ SPDX-License-Identifier: Apache-2.0
 
 # Robot Re-localization package for ROS2 Navigation
 
-The robot re-localization package is a package which enables re-localization in ROS2 navigation.
-Under sensor measurements glitches or disturbance in the environments or similarity in the scene, robot may lose its localization, hence a fast and reliable re-localization algorithm is required to re-localize the robot.
-To address this problem, we innovated a compute and memory efficient re-localization algorithm for mobile robots.
+The robot relocalization package enables relocalization in ROS 2 Navigation.
+Sensor measurement glitches, environmental disturbances, or scene similarities can cause a robot to lose its
+localization. A fast and reliable algorithm is therefore needed to relocalize the robot.
+To address this problem, we developed a compute- and memory-efficient relocalization algorithm for mobile robots.
 
 ## Getting Started
 
@@ -26,7 +27,7 @@ Install the ``ros-${ROS_DISTRO}-its-relocalization-bringup`` Debian package from
 sudo apt install ros-${ROS_DISTRO}-its-relocalization-bringup
 ```
 
-Run the following script to set environment variables and bringup ROS2 navigation, and Turtlebot3 in Gazebo:
+Run the following script to set environment variables and launch ROS 2 Navigation and TurtleBot3 in Gazebo:
 
 ```sh
 source /opt/ros/$ROS_DISTRO/setup.bash        # ROS_DISTRO=humble or jazzy
@@ -49,10 +50,10 @@ source /opt/ros/$ROS_DISTRO/setup.bash
 ros2 launch relocalization_bringup relocalization.launch.xml 
 ```
 
-We simulate the re-localization package, we created a demo application which simulates a situation where sensor fails.
-In this application, the sensor gets disabled for a few seconds while the robot is traveling toward the goal.
-Once, the sensor measurements are re-enabled, the robot will automatically re-localized itself and continue the navigation toward the goal.
-To run this demo application run:
+To demonstrate the relocalization package, we created a demo application that simulates a sensor failure.
+In this application, the sensor is disabled for a few seconds while the robot travels toward its goal.
+Once sensor measurements are restored, the robot automatically relocalizes itself and continues toward the goal.
+To run the demo, use:
 
 ```sh
 ros2 launch relocalization_bringup relocalization_demo.launch.xml mode:=demo

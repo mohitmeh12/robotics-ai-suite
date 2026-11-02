@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # pylint: disable=duplicate-code
 # SPDX-License-Identifier: Apache-2.0
-# Copyright (C) 2025 Intel Corporation
+# Copyright (C) 2026 Intel Corporation
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -29,8 +29,7 @@ class ForwardTacotronIE:  # pylint: disable=too-many-instance-attributes
     """OpenVINO-based Forward Tacotron TTS inference wrapper."""
 
     # pylint: disable=too-many-arguments,too-many-positional-arguments
-    def __init__(self, model_duration, model_forward, core,
-                 device='CPU', verbose=False):
+    def __init__(self, model_duration, model_forward, core, device="CPU", verbose=False):
         """Load duration-predictor and forward models and compile them."""
         self.verbose = verbose
         self.device = device
@@ -47,19 +46,19 @@ class ForwardTacotronIE:  # pylint: disable=too-many-instance-attributes
         self.duration_len = self.duration_predictor_net.inputs[0].shape[1]
         # fixed length of the input embeddings for forward
         data_inp = next(
-            (inp for inp in self.forward_net.inputs if inp.any_name == 'data'),
+            (inp for inp in self.forward_net.inputs if inp.any_name == "data"),
             self.forward_net.inputs[0],
         )
         self.forward_len = data_inp.shape[1]
         if self.verbose:
             print(
-                f'Forward limitations : {self.duration_len} symbols'
-                f' and {self.forward_len} embeddings'
+                f"Forward limitations : {self.duration_len} symbols"
+                f" and {self.forward_len} embeddings"
             )
-        self.is_attention = any(inp.any_name == 'pos_mask' for inp in self.forward_net.inputs)
+        self.is_attention = any(inp.any_name == "pos_mask" for inp in self.forward_net.inputs)
         if self.is_attention:
             self.init_pos_mask()
-            print('Load ForwardTacotron with attention')
+            print("Load ForwardTacotron with attention")
         else:
             self.pos_mask = None
 
@@ -105,7 +104,7 @@ class ForwardTacotronIE:  # pylint: disable=too-many-instance-attributes
         duration[np.where(duration < 0)] = 0
         tot_duration = np.cumsum(duration, 1)
         max_duration = int(tot_duration.max().item())
-        index = np.zeros([x.shape[0], max_duration, x.shape[2]], dtype='long')
+        index = np.zeros([x.shape[0], max_duration, x.shape[2]], dtype="long")
 
         for i in range(tot_duration.shape[0]):
             pos = 0
@@ -129,9 +128,9 @@ class ForwardTacotronIE:  # pylint: disable=too-many-instance-attributes
 
     def load_network(self, model_xml):
         """Read an OpenVINO IR model from disk."""
-        model_bin_name = '.'.join(osp.basename(model_xml).split('.')[:-1]) + '.bin'
+        model_bin_name = ".".join(osp.basename(model_xml).split(".")[:-1]) + ".bin"
         model_bin = osp.join(osp.dirname(model_xml), model_bin_name)
-        print(f'Loading network files:\n\t{model_xml}\n\t{model_bin}')
+        print(f"Loading network files:\n\t{model_xml}\n\t{model_bin}")
         net = self.core.read_model(model=model_xml)
         return net
 
@@ -145,15 +144,15 @@ class ForwardTacotronIE:  # pylint: disable=too-many-instance-attributes
         if self.is_attention:
             input_mask = self.sequence_mask(np.array([[non_empty_symbols]]), sequence.shape[1])
             pos_mask = self.pos_mask[:, :, : sequence.shape[1], : sequence.shape[1]]
-            inputs = {'input_seq': sequence, 'input_mask': input_mask, 'pos_mask': pos_mask}
+            inputs = {"input_seq": sequence, "input_mask": input_mask, "pos_mask": pos_mask}
             if speaker_embedding is not None:
-                inputs['speaker_embedding'] = speaker_embedding
+                inputs["speaker_embedding"] = speaker_embedding
             out = self.duration_predictor_exec(inputs)
         else:
-            out = self.duration_predictor_exec({'input_seq': sequence})
+            out = self.duration_predictor_exec({"input_seq": sequence})
         duration = out[self.duration_predictor_exec.outputs[0]] * alpha
 
-        duration = (duration + 0.5).astype('int').flatten()
+        duration = (duration + 0.5).astype("int").flatten()
         duration = np.expand_dims(duration, axis=0)
         preprocessed_embeddings = out[self.duration_predictor_exec.outputs[1]]
 
@@ -163,9 +162,9 @@ class ForwardTacotronIE:  # pylint: disable=too-many-instance-attributes
         indexes = self.build_index(duration, preprocessed_embeddings)
         if self.verbose:
             print(
-                f'Index: {indexes.shape}, duration: {duration.shape},'
-                f' embeddings: {preprocessed_embeddings.shape},'
-                f' non_empty_symbols: {non_empty_symbols}'
+                f"Index: {indexes.shape}, duration: {duration.shape},"
+                f" embeddings: {preprocessed_embeddings.shape},"
+                f" non_empty_symbols: {non_empty_symbols}"
             )
 
         return self.gather(preprocessed_embeddings, 1, indexes)
@@ -175,12 +174,12 @@ class ForwardTacotronIE:  # pylint: disable=too-many-instance-attributes
         if self.is_attention:
             data_mask = self.sequence_mask(np.array([[non_empty_symbols]]), aligned_emb.shape[1])
             pos_mask = self.pos_mask[:, :, : aligned_emb.shape[1], : aligned_emb.shape[1]]
-            inputs = {'data': aligned_emb, 'data_mask': data_mask, 'pos_mask': pos_mask}
+            inputs = {"data": aligned_emb, "data_mask": data_mask, "pos_mask": pos_mask}
             if speaker_embedding is not None:
-                inputs['speaker_embedding'] = speaker_embedding
+                inputs["speaker_embedding"] = speaker_embedding
             out = self.forward_exec(inputs)
         else:
-            out = self.forward_exec({'data': aligned_emb})
+            out = self.forward_exec({"data": aligned_emb})
         return out[self.forward_exec.outputs[0]][:, :non_empty_symbols]
 
     def find_optimal_delimiters_position(self, sequence, delimiters, idx, window=20):
@@ -192,8 +191,7 @@ class ForwardTacotronIE:  # pylint: disable=too-many-instance-attributes
         return res
 
     # pylint: disable=too-many-locals
-    def forward_duration_prediction_by_delimiters(
-            self, text, speaker_embedding, alpha):
+    def forward_duration_prediction_by_delimiters(self, text, speaker_embedding, alpha):
         """Predict durations by splitting text at punctuation delimiters."""
         sequence = self.seq_to_indexes(text)
         seq_len = len(sequence)
@@ -201,7 +199,7 @@ class ForwardTacotronIE:  # pylint: disable=too-many-instance-attributes
 
         if seq_len <= self.duration_len:
             non_empty_symbols = len(sequence) + min(1, self.duration_len - seq_len)
-            sequence = sequence + [_symbol_to_id[' ']] * (self.duration_len - seq_len)
+            sequence = sequence + [_symbol_to_id[" "]] * (self.duration_len - seq_len)
             sequence = np.array(sequence)
             sequence = np.expand_dims(sequence, axis=0)
             outputs.append(
@@ -210,7 +208,7 @@ class ForwardTacotronIE:  # pylint: disable=too-many-instance-attributes
                 )
             )
         else:
-            punctuation = '.!?,;: '
+            punctuation = ".!?,;: "
             delimiters = [_symbol_to_id[p] for p in punctuation]
 
             start_idx = 0
@@ -231,15 +229,14 @@ class ForwardTacotronIE:  # pylint: disable=too-many-instance-attributes
                         break
                 if edge < 0:
                     raise ValueError(
-                        f'Bad delimiter position {edge}'
-                        f' for sequence with length {seq_len}'
+                        f"Bad delimiter position {edge} for sequence with length {seq_len}"
                     )
 
                 sub_sequence = sequence[start_idx:edge]
                 non_empty_symbols = len(sub_sequence) + min(
                     1, self.duration_len - len(sub_sequence)
                 )
-                sub_sequence += [_symbol_to_id[' ']] * (self.duration_len - len(sub_sequence))
+                sub_sequence += [_symbol_to_id[" "]] * (self.duration_len - len(sub_sequence))
                 sub_sequence = np.array(sub_sequence)
                 sub_sequence = np.expand_dims(sub_sequence, axis=0)
                 outputs.append(
@@ -275,18 +272,18 @@ class ForwardTacotronIE:  # pylint: disable=too-many-instance-attributes
                 sub_aligned_emb = np.pad(
                     sub_aligned_emb,
                     ((0, 0), (0, self.forward_len - sub_aligned_emb.shape[1]), (0, 0)),
-                    'constant',
+                    "constant",
                     constant_values=0,
                 )
             if self.verbose:
-                print(f'SAEmb shape: {sub_aligned_emb.shape}')
+                print(f"SAEmb shape: {sub_aligned_emb.shape}")
             mel = self.infer_mel(sub_aligned_emb, end_idx - start_idx, speaker_embedding)
             mels.append(mel)
             start_idx += self.forward_len
 
         res = np.concatenate(mels, axis=1)
         if self.verbose:
-            print(f'MEL shape :{res.shape}')
+            print(f"MEL shape :{res.shape}")
 
         return res
 
@@ -299,8 +296,7 @@ class ForwardTacotronIE:  # pylint: disable=too-many-instance-attributes
     def has_speaker_embeddings(self):
         """Check whether the duration model accepts speaker embeddings."""
         return any(
-            inp.any_name == 'speaker_embedding'
-            for inp in self.duration_predictor_net.inputs
+            inp.any_name == "speaker_embedding" for inp in self.duration_predictor_net.inputs
         )
 
     def get_pca_speaker_embedding(self, gender, alpha):
@@ -308,7 +304,7 @@ class ForwardTacotronIE:  # pylint: disable=too-many-instance-attributes
         if not self.has_speaker_embeddings():
             return None
 
-        emb = self.male_embeddings if gender == 'Male' else self.female_embeddings
+        emb = self.male_embeddings if gender == "Male" else self.female_embeddings
         pca = PCA()
         projection = pca.build(emb)
         x1 = min(projection)
@@ -342,8 +338,26 @@ class ForwardTacotronIE:  # pylint: disable=too-many-instance-attributes
             38,
         ]
         self.female_idx = [
-            0, 1, 4, 5, 6, 8, 9, 10, 13, 14,
-            17, 18, 22, 23, 24, 28, 30, 31, 37, 39,
+            0,
+            1,
+            4,
+            5,
+            6,
+            8,
+            9,
+            10,
+            13,
+            14,
+            17,
+            18,
+            22,
+            23,
+            24,
+            28,
+            30,
+            31,
+            37,
+            39,
         ]
         self.speaker_embeddings = np.array(
             [
@@ -389,17 +403,7 @@ class ForwardTacotronIE:  # pylint: disable=too-many-instance-attributes
                 [0.3036082983016968, -0.8406648635864258],
             ]
         )
-        mask = np.array(
-            [
-                i in self.male_idx
-                for i in range(self.speaker_embeddings.shape[0])
-            ]
-        )
+        mask = np.array([i in self.male_idx for i in range(self.speaker_embeddings.shape[0])])
         self.male_embeddings = self.speaker_embeddings[mask, :]
-        mask = np.array(
-            [
-                i in self.female_idx
-                for i in range(self.speaker_embeddings.shape[0])
-            ]
-        )
+        mask = np.array([i in self.female_idx for i in range(self.speaker_embeddings.shape[0])])
         self.female_embeddings = self.speaker_embeddings[mask, :]

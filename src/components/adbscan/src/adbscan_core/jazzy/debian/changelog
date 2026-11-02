@@ -1,0 +1,11 @@
+ros-jazzy-adbscan-core (0.1.0-2) UNRELEASED; urgency=low
+
+  * Refresh Debian packaging for the shared ADBSCAN core.
+
+ -- ECI Maintainer <eci.maintainer@intel.com>  Thu, 08 Oct 2026 21:23:19 +0000
+
+ros-jazzy-adbscan-core (0.1.0-1) UNRELEASED; urgency=low
+
+  * Initial reusable clustering library package.
+
+ -- ECI Maintainer <eci.maintainer@intel.com>  Tue, 06 Oct 2026 00:00:00 +0000

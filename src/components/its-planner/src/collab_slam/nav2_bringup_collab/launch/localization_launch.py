@@ -89,7 +89,7 @@ def generate_launch_description():
     declare_container_name_cmd = DeclareLaunchArgument(
         'container_name',
         default_value='nav2_container',
-        description='the name of conatiner that nodes will load in if use composition',
+        description='The name of the container into which nodes will load when using composition',
     )
 
     declare_use_respawn_cmd = DeclareLaunchArgument(

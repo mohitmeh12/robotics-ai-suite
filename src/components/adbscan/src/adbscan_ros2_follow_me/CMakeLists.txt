@@ -1,4 +1,4 @@
-# Copyright (C) 2025 Intel Corporation
+# Copyright (C) 2026 Intel Corporation
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -23,31 +23,33 @@ endif()
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
+find_package(adbscan_core REQUIRED)
 add_compile_options(-std=c++17)
 find_package(rclcpp REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(visualization_msgs REQUIRED)
+find_package(std_msgs REQUIRED)
 find_package(nav2_dynamic_msgs REQUIRED)
 set(PCL_DIR /usr/lib/x86_64-linux-gnu/cmake/pcl-1.12)
 find_package(pcl_conversions REQUIRED)
 find_package(PCL 1.12 REQUIRED COMPONENTS common io kdtree)
-find_package(follow_me_interfaces REQUIRED)
 find_package(Eigen3 REQUIRED)
 
 include_directories(include)
 
 set(HEADER_FILES src/ADBScan.h src/dbscan_adaptiveK.h src/doDBSCAN.hpp src/print_info.h src/Util.hpp)
 add_library(adbscan_lib src/dbscan_adaptiveK.cpp src/doDBSCAN.cpp src/print_info.cpp src/Util.cpp ${HEADER_FILES})
+ament_target_dependencies(adbscan_lib adbscan_core)
 
 set(dependencies
-  "follow_me_interfaces"
   "geometry_msgs"
   "nav2_dynamic_msgs"
   "pcl_conversions"
   "PCL"
   "rclcpp"
   "sensor_msgs"
+  "std_msgs"
   "visualization_msgs"
 )
 add_executable(adbscan_pub src/adbscan_pub.cpp)
@@ -65,28 +67,8 @@ add_executable(adbscan_sub
   src/print_info.cpp
   src/Util.cpp
 )
-ament_target_dependencies(adbscan_sub ${dependencies})
+ament_target_dependencies(adbscan_sub ${dependencies} adbscan_core)
 target_link_libraries(adbscan_sub ${PCL_LIBRARIES})
-
-add_executable(adbscan_sub_w_gesture
-  src/adbscan_sub_w_gesture.cpp
-  src/dbscan_adaptiveK.cpp
-  src/doDBSCAN.cpp
-  src/print_info.cpp
-  src/Util.cpp
-)
-ament_target_dependencies(adbscan_sub_w_gesture ${dependencies})
-target_link_libraries(adbscan_sub_w_gesture ${PCL_LIBRARIES})
-
-add_executable(adbscan_sub_w_gesture_audio
-  src/adbscan_sub_w_gesture_audio.cpp
-  src/dbscan_adaptiveK.cpp
-  src/doDBSCAN.cpp
-  src/print_info.cpp
-  src/Util.cpp
-)
-ament_target_dependencies(adbscan_sub_w_gesture_audio ${dependencies})
-target_link_libraries(adbscan_sub_w_gesture_audio ${PCL_LIBRARIES})
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
@@ -95,7 +77,7 @@ if(BUILD_TESTING)
     test/main.cpp
     test/test_adbscan_clusters.cpp)
   ament_add_gtest(${PROJECT_NAME}_test ${TESTFILES})
-  target_link_libraries(${PROJECT_NAME}_test adbscan_lib)
+  target_link_libraries(${PROJECT_NAME}_test adbscan_lib ${PCL_LIBRARIES})
 
   install(TARGETS
     ${PROJECT_NAME}_test
@@ -105,11 +87,9 @@ endif()
 install(TARGETS
   adbscan_pub
   adbscan_sub
-  adbscan_sub_w_gesture
-  adbscan_sub_w_gesture_audio
   DESTINATION lib/${PROJECT_NAME})
 
-install(DIRECTORY config launch
+install(DIRECTORY config
   DESTINATION share/${PROJECT_NAME}/
 )
 ament_package()
@@ -117,30 +97,36 @@ ament_package()
 include(${CMAKE_CURRENT_SOURCE_DIR}/../../cmake/RosDebianPackage.cmake)
 configure_ros_debian_package_with_metadata(
   PACKAGE_NAME "ros-${ROS_DISTRO}-adbscan-ros2-follow-me"
-  DESCRIPTION "An AMR application developed by Intel to enable a robot to follow a specific person or target based on Adaptive DBScan clustering, gesture and audio command based motion control"
+  DESCRIPTION "An AMR application for target tracking and motion control with Adaptive DBScan clustering"
   CONTACT "ECI Maintainer <eci-maintainer@intel.com>"
   BUILD_DEPENDS
     "build-essential"
     "cmake"
     "ninja-build"
     "ros-${ROS_DISTRO}-ament-cmake"
+    "ros-${ROS_DISTRO}-adbscan-core"
+    "ros-${ROS_DISTRO}-ament-cmake-gtest"
+    "ros-${ROS_DISTRO}-ament-lint-auto"
     "ros-${ROS_DISTRO}-ament-lint-common"
     "ros-${ROS_DISTRO}-builtin-interfaces"
-    "ros-${ROS_DISTRO}-follow-me-interfaces"
     "ros-${ROS_DISTRO}-geometry-msgs"
     "ros-${ROS_DISTRO}-nav2-dynamic-msgs"
     "ros-${ROS_DISTRO}-pcl-conversions"
     "ros-${ROS_DISTRO}-rclcpp"
     "ros-${ROS_DISTRO}-sensor-msgs"
+    "ros-${ROS_DISTRO}-std-msgs"
     "ros-${ROS_DISTRO}-visualization-msgs"
     "libpcl-dev"
     "libeigen3-dev"
   DEPENDS
+    "ros-${ROS_DISTRO}-adbscan-core"
     "ros-${ROS_DISTRO}-builtin-interfaces"
-    "ros-${ROS_DISTRO}-follow-me-interfaces"
     "ros-${ROS_DISTRO}-geometry-msgs"
-    "ros-${ROS_DISTRO}-nav2-dynamic-msgs"
+    "ros-${ROS_DISTRO}-nav2-dynamic-msgs (>= 0.0.1-1)"
+    "ros-${ROS_DISTRO}-pcl-conversions"
     "ros-${ROS_DISTRO}-rclcpp"
+    "ros-${ROS_DISTRO}-ros2run"
     "ros-${ROS_DISTRO}-sensor-msgs"
+    "ros-${ROS_DISTRO}-std-msgs"
     "ros-${ROS_DISTRO}-visualization-msgs"
 )

@@ -36,7 +36,7 @@ ament_package()
 include(${CMAKE_CURRENT_SOURCE_DIR}/../../cmake/RosDebianPackage.cmake)
 configure_ros_debian_package_with_metadata(
   PACKAGE_NAME "ros-${ROS_DISTRO}-segmentation-realsense-tutorial"
-  DESCRIPTION "Example tutorial for Openvino Semantic Segmentation with Realsense Topic"
+  DESCRIPTION "Example tutorial for OpenVINO semantic segmentation with a RealSense topic"
   CONTACT "ECI Maintainer <eci.maintainer@intel.com>"
   BUILD_DEPENDS
     "cmake"

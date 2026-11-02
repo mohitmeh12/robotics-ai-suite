@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # pylint: disable=duplicate-code
 # SPDX-License-Identifier: Apache-2.0
-# Copyright (C) 2025 Intel Corporation
+# Copyright (C) 2026 Intel Corporation
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -37,6 +37,7 @@ from follow_me_interfaces.msg import AudioCommand
 
 class QuartzNet:
     """OpenVINO-based QuartzNet inference wrapper for speech recognition."""
+
     pad_to = 16
     alphabet = " abcdefghijklmnopqrstuvwxyz'"
 
@@ -48,25 +49,25 @@ class QuartzNet:
         self.core = core
         network = self.core.read_model(model_path)
         if len(network.inputs) != 1:
-            raise RuntimeError('QuartzNet must have one input')
+            raise RuntimeError("QuartzNet must have one input")
 
         model_input_shape = network.inputs[0].shape
         if len(model_input_shape) != 3:
-            raise RuntimeError('QuartzNet input must be 3-dimensional')
+            raise RuntimeError("QuartzNet input must be 3-dimensional")
         if model_input_shape[1] != input_shape[1]:
             raise RuntimeError("QuartzNet input second dimension can't be reshaped")
         if model_input_shape[2] % self.pad_to:
             raise RuntimeError(
-                f'{self.pad_to} must be a divisor of QuartzNet input third dimension'
+                f"{self.pad_to} must be a divisor of QuartzNet input third dimension"
             )
         if len(network.outputs) != 1:
-            raise RuntimeError('QuartzNet must have one output')
+            raise RuntimeError("QuartzNet must have one output")
         model_output_shape = network.outputs[0].shape
         if len(model_output_shape) != 3:
-            raise RuntimeError('QuartzNet output must be 3-dimensional')
+            raise RuntimeError("QuartzNet output must be 3-dimensional")
         if model_output_shape[2] != len(self.alphabet) + 1:  # +1 for blank char
             raise RuntimeError(
-                f'QuartzNet output third dimension size must be {len(self.alphabet) + 1}'
+                f"QuartzNet output third dimension size must be {len(self.alphabet) + 1}"
             )
         network.reshape({network.inputs[0].any_name: input_shape})
         self.compiled_model = self.core.compile_model(network, device)
@@ -78,7 +79,7 @@ class QuartzNet:
     @classmethod
     def audio_to_melspectrum(cls, audio, sampling_rate):
         """Convert raw audio to a log mel-spectrogram suitable for QuartzNet."""
-        assert sampling_rate == 16000, 'Only 16 KHz audio supported'
+        assert sampling_rate == 16000, "Only 16 KHz audio supported"
         preemph = 0.97
         # To increase signal to noise ratio we use a pre-emphasis filter.
         # Equation we use to apply pre-emphasis filter on signal x is  y(t) = x(t)− a * x(t−1)
@@ -86,7 +87,7 @@ class QuartzNet:
         preemphased = np.concatenate(
             [audio[:1], audio[1:] - preemph * audio[:-1].astype(np.float32)]
         )
-        print('preemphased done \n')
+        print("preemphased done \n")
         # Short-time Fourier transform (STFT)
         # is a sequence of Fourier transforms of a windowed signal.
         # n_fft - The number of rows in the STFT matrix is (1+ n_fft/2). (n_fft = Win_length).
@@ -103,7 +104,7 @@ class QuartzNet:
                 win_length=win_length,
                 center=True,
                 window=scipy.signal.windows.hann(win_length),
-                pad_mode='reflect',
+                pad_mode="reflect",
             )
         )
         # spec = np.abs(
@@ -118,7 +119,7 @@ class QuartzNet:
         #     )
         # )
 
-        print('spec done \n')
+        print("spec done \n")
         # Mel scale is a unit of pitch
         # such that equal distances in pitch sounded equally distant to the listener.
         # A Mel spectrogram is a spectrogram where the frequencies are converted to the Mel scale.
@@ -129,10 +130,10 @@ class QuartzNet:
             n_mels=64,
             fmin=0.0,
             fmax=8000.0,
-            norm='slaney',
+            norm="slaney",
             htk=False,
         )
-        print('mel_basis: Done \n')
+        print("mel_basis: Done \n")
         # To have Perceptually relevant frequency representation we calculate Mel Spectrogram.
         # Mel Spectrogram is a dot product of Mel filter banks and Spectrogram.
         # To have Perceptually relevant amplitude representation
@@ -169,57 +170,58 @@ class QuartzNet:
                 transcription.append(cls.alphabet[idx])
             prev_id = idx
 
-        return ''.join(transcription)
+        return "".join(transcription)
 
 
 class SpeechRecognizer(Node):  # pylint: disable=too-many-instance-attributes
     """ROS 2 node that recognises speech commands from audio files or mic."""
+
     def __init__(self):
         """Initialise parameters, subscriptions, and publishers."""
-        super().__init__('speech_recognition_node')
-        self.get_logger().info('speech_recognition_node has been started')
+        super().__init__("speech_recognition_node")
+        self.get_logger().info("speech_recognition_node has been started")
         # declare parameters
-        self.audio_file_ = ''
-        self.model_file_ = ''
-        self.audio_transcript_ = 'no_action'
+        self.audio_file_ = ""
+        self.model_file_ = ""
+        self.audio_transcript_ = "no_action"
         self.command_hold_until_ = self.get_clock().now()
         self.command_hold_seconds_ = 3.0
         self.allowed_commands_ = [
-            'start following',
-            'stop following',
-            'turn left',
-            'turn right',
-            'speed up',
-            'slow down',
+            "start following",
+            "stop following",
+            "turn left",
+            "turn right",
+            "speed up",
+            "slow down",
         ]
-        self.outgoing_commands_ = ['start', 'stop', 'left', 'right', 'speed', 'slow']
-        self.declare_parameter('audio_input', 'recorded')
-        self.declare_parameter('audio_publish_frequency', 2.0)
-        self.declare_parameter('sampling_rate', 16000)
-        self.declare_parameter('live_audio_length_in_seconds', 20)
-        self.declare_parameter('device_name', 'CPU')
-        self.device_name_ = self.get_parameter('device_name').value
+        self.outgoing_commands_ = ["start", "stop", "left", "right", "speed", "slow"]
+        self.declare_parameter("audio_input", "recorded")
+        self.declare_parameter("audio_publish_frequency", 2.0)
+        self.declare_parameter("sampling_rate", 16000)
+        self.declare_parameter("live_audio_length_in_seconds", 20)
+        self.declare_parameter("device_name", "CPU")
+        self.device_name_ = self.get_parameter("device_name").value
         self.device_name_ = self.device_name_.upper()
-        if self.device_name_ not in ['CPU', 'GPU', 'NPU']:
-            self.device_name_ = 'CPU'
-        self.get_logger().info(f'using device: {self.device_name_}')
-        self.fs = self.get_parameter('sampling_rate').value
-        self.live_audio_length = self.get_parameter('live_audio_length_in_seconds').value
-        self.audio_input_type_ = self.get_parameter('audio_input').value
-        self.audio_publish_frequency_ = self.get_parameter('audio_publish_frequency').value
-        if self.audio_input_type_ not in ['recorded', 'live']:
-            self.get_logger().error('Wrong audio input type. Supported options: recorded, live')
-        if self.audio_input_type_ == 'live':
+        if self.device_name_ not in ["CPU", "GPU", "NPU"]:
+            self.device_name_ = "CPU"
+        self.get_logger().info(f"using device: {self.device_name_}")
+        self.fs = self.get_parameter("sampling_rate").value
+        self.live_audio_length = self.get_parameter("live_audio_length_in_seconds").value
+        self.audio_input_type_ = self.get_parameter("audio_input").value
+        self.audio_publish_frequency_ = self.get_parameter("audio_publish_frequency").value
+        if self.audio_input_type_ not in ["recorded", "live"]:
+            self.get_logger().error("Wrong audio input type. Supported options: recorded, live")
+        if self.audio_input_type_ == "live":
             self.audio_input_timer_ = self.create_timer(
                 1.0 / self.audio_publish_frequency_, self.record_audio
             )
         else:
             self.audio_subscriber_ = self.create_subscription(
-                String, 'audio_filename', self.audio_topic_callback, 10
+                String, "audio_filename", self.audio_topic_callback, 10
             )
             # self.get_logger().info("Live audio input is not supported yet")
         # declare gesture publisher
-        self.audio_command_publisher_ = self.create_publisher(AudioCommand, 'audio_command', 10)
+        self.audio_command_publisher_ = self.create_publisher(AudioCommand, "audio_command", 10)
         self.audio_publish_timer_ = self.create_timer(
             1.0 / self.audio_publish_frequency_, self.publish_audio_command
         )
@@ -238,49 +240,47 @@ class SpeechRecognizer(Node):  # pylint: disable=too-many-instance-attributes
         )
         sd.wait()
         if myrecording is not None:
-            write('recorded.wav', self.fs, myrecording)  # noqa  # pylint: disable=undefined-variable
-            self.process_audio_file('recorded.wav')
+            write("recorded.wav", self.fs, myrecording)  # noqa  # pylint: disable=undefined-variable
+            self.process_audio_file("recorded.wav")
         else:
-            self.process_audio_file('')
+            self.process_audio_file("")
 
     def process_audio_file(self, audio_filename):  # pylint: disable=too-many-locals
         """Transcribe an audio file and map it to a known command."""
-        if audio_filename != '':
+        if audio_filename != "":
             self.audio_file_ = os.path.join(
-                get_package_share_directory('speech_recognition_pkg'),
-                'config',
-                'audio_files',
+                get_package_share_directory("speech_recognition_pkg"),
+                "config",
+                "audio_files",
                 audio_filename,
             )
             if not os.path.isfile(self.audio_file_):
-                self.get_logger().error(
-                    f'recorded audio file: {self.audio_file_} is not found'
-                )
+                self.get_logger().error(f"recorded audio file: {self.audio_file_} is not found")
                 return
-            with wave.open(self.audio_file_, 'rb') as wave_read:
+            with wave.open(self.audio_file_, "rb") as wave_read:
                 channel_num, sample_width, sampling_rate, pcm_length, compression_type, _ = (
                     wave_read.getparams()
                 )
                 # print("get params from audio file")
-                assert sample_width == 2, 'Only 16-bit WAV PCM supported'
-                assert compression_type == 'NONE', 'Only linear PCM WAV files supported'
-                assert channel_num == 1, 'Only mono WAV PCM supported'
-                assert sampling_rate == 16000, 'Only 16 KHz audio supported'
+                assert sample_width == 2, "Only 16-bit WAV PCM supported"
+                assert compression_type == "NONE", "Only linear PCM WAV files supported"
+                assert channel_num == 1, "Only mono WAV PCM supported"
+                assert sampling_rate == 16000, "Only 16 KHz audio supported"
                 audio = np.frombuffer(
                     wave_read.readframes(pcm_length * channel_num), dtype=np.int16
                 ).reshape((pcm_length, channel_num))
                 # Wave_read.readframes(n) reads and returns at most n frames of audio,
                 # as a bytes object
-                print('Reading audio file: DONE \n')
+                print("Reading audio file: DONE \n")
                 # print(audio.shape)
             # Audio converted to Log Mel Spectrogram using Audio to Mel spectrogram Method.
             log_melspectrum = QuartzNet.audio_to_melspectrum(audio.flatten(), sampling_rate)
             # Loading QuartzNet model
             self.model_file_ = os.path.join(
-                get_package_share_directory('speech_recognition_pkg'),
-                'config',
-                'model_files',
-                'quartznet-15x5-en.xml',
+                get_package_share_directory("speech_recognition_pkg"),
+                "config",
+                "model_files",
+                "quartznet-15x5-en.xml",
             )
             quartz_net = QuartzNet(
                 ov.Core(), self.model_file_, log_melspectrum.shape, device=self.device_name_
@@ -290,7 +290,7 @@ class SpeechRecognizer(Node):  # pylint: disable=too-many-instance-attributes
             # Ctc greedy decoder is used to generate Text or Transcription.
             transcription = QuartzNet.ctc_greedy_decode(character_probs)
 
-            print('\ntext from audio file  :  ', str(transcription))
+            print("\ntext from audio file  :  ", str(transcription))
             audio_command = str(transcription)
 
             similarity_score = [
@@ -300,25 +300,24 @@ class SpeechRecognizer(Node):  # pylint: disable=too-many-instance-attributes
             command_idx = np.argmax(similarity_score)
             max_similarity = np.max(similarity_score)
             if max_similarity <= 0.75:
-                self.get_logger().info('Audio command not recognized')
+                self.get_logger().info("Audio command not recognized")
             else:
                 self.audio_transcript_ = self.outgoing_commands_[command_idx]
-                self.command_hold_until_ = (
-                    self.get_clock().now()
-                    + rclpy.duration.Duration(seconds=self.command_hold_seconds_)
+                self.command_hold_until_ = self.get_clock().now() + rclpy.duration.Duration(
+                    seconds=self.command_hold_seconds_
                 )
 
     def publish_audio_command(self):
         """Publish the current audio transcript as an AudioCommand message."""
         if (
-            self.audio_transcript_ != 'no_action'
+            self.audio_transcript_ != "no_action"
             and self.get_clock().now() > self.command_hold_until_
         ):
-            self.audio_transcript_ = 'no_action'
+            self.audio_transcript_ = "no_action"
         audio_msg = AudioCommand()
         audio_msg.audio_command = self.audio_transcript_
         self.audio_command_publisher_.publish(audio_msg)
-        self.get_logger().info(f'Publishing audio command: {audio_msg.audio_command}')
+        self.get_logger().info(f"Publishing audio command: {audio_msg.audio_command}")
 
     def string_similarity(self, s1, s2):
         """Compute cosine similarity between two strings using ordinal vectors."""
@@ -343,5 +342,5 @@ def main(args=None):
     rclpy.shutdown()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

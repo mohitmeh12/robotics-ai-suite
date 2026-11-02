@@ -395,12 +395,12 @@ vector<pair<double, double>> ITSPlanner::processDubinsPath(
 
   // Interpolate the dubinsPath to add intermediate nodes along the path
   vector<std::array<double, 3>> pathWithHeadings;
-  vector<int> nodeIndeces;
-  interpolateItsPath(pathWithHeadings, dubinsPath, 30.0, initialHeading, finalHeading, nodeIndeces);
+  vector<int> nodeIndices;
+  interpolateItsPath(pathWithHeadings, dubinsPath, 30.0, initialHeading, finalHeading, nodeIndices);
 
   // Get rid of redundant milestones
   vector<pair<double, double>> mapPath = removeRedundantNodes(
-    pathWithHeadings, dubinsPath, nodeIndeces, mapTurnRadius, yaw_tolerance_, costmap);
+    pathWithHeadings, dubinsPath, nodeIndices, mapTurnRadius, yaw_tolerance_, costmap);
 
   // Convert path from map to world coords
   vector<pair<double, double>> worldPath = pathToWorldCoords(mapPath);
@@ -557,7 +557,7 @@ vector<double> ITSPlanner::linspace(double a, double b, int steps)
 
 vector<pair<double, double>> ITSPlanner::removeRedundantITSNodes(
   vector<std::array<double, 2>> & newPath, const vector<pair<double, double>> & originalPath,
-  const vector<int> & nodeIndeces, const vector<vector<int>> & costmap)
+  const vector<int> & nodeIndices, const vector<vector<int>> & costmap)
 {
   vector<pair<double, double>> path;
   vector<pair<double, double>> originalPathSeg;
@@ -583,8 +583,8 @@ vector<pair<double, double>> ITSPlanner::removeRedundantITSNodes(
       bool done = false;
 
       originalPathSeg = vector<pair<double, double>>(
-        originalPath.begin() + nodeIndeces[currNode],
-        originalPath.begin() + nodeIndeces[compareNode]);
+        originalPath.begin() + nodeIndices[currNode],
+        originalPath.begin() + nodeIndices[compareNode]);
 
       vector<pair<double, double>> checkedPath;
 
@@ -631,7 +631,7 @@ vector<pair<double, double>> ITSPlanner::removeRedundantITSNodes(
     vector<pair<double, double>> pathSeg;
     if (path_segments.find({curr, next}) == path_segments.end()) {
       pathSeg = vector<pair<double, double>>(
-        originalPath.begin() + nodeIndeces[curr], originalPath.begin() + nodeIndeces[next]);
+        originalPath.begin() + nodeIndices[curr], originalPath.begin() + nodeIndices[next]);
     } else {
       pathSeg = path_segments[{essentialNodes[i], essentialNodes[i + 1]}];
     }
@@ -667,12 +667,12 @@ vector<pair<double, double>> ITSPlanner::processITSPath(
 {
   // Interpolate to add intermediate nodes along the path
   vector<std::array<double, 2>> newPath;
-  vector<int> nodeIndeces;
-  interpolateItsPathITS(newPath, originalPath, 30.0, nodeIndeces);
+  vector<int> nodeIndices;
+  interpolateItsPathITS(newPath, originalPath, 30.0, nodeIndices);
 
   // Get rid of redundant milestones
   vector<pair<double, double>> mapPath =
-    removeRedundantITSNodes(newPath, originalPath, nodeIndeces, costmap);
+    removeRedundantITSNodes(newPath, originalPath, nodeIndices, costmap);
 
   // Convert path from map to world coords
   vector<pair<double, double>> worldPath = pathToWorldCoords(mapPath);
@@ -683,7 +683,7 @@ vector<pair<double, double>> ITSPlanner::processITSPath(
 
 void ITSPlanner::interpolateItsPathITS(
   vector<std::array<double, 2>> & newPath, vector<pair<double, double>> & oldPath,
-  const int & numSteps, vector<int> & nodeIndeces)
+  const int & numSteps, vector<int> & nodeIndices)
 {
   if (oldPath.empty()) {
     return;
@@ -692,16 +692,16 @@ void ITSPlanner::interpolateItsPathITS(
   std::array<double, 2> startNode = {oldPath[0].first, oldPath[0].second};
   std::array<double, 2> goalNode = {oldPath.back().first, oldPath.back().second};
   newPath = {startNode};
-  nodeIndeces = {0};
-  auto interNodes = getIntermediateNodesITS(oldPath, 1.0, nodeStepSize, nodeIndeces);
+  nodeIndices = {0};
+  auto interNodes = getIntermediateNodesITS(oldPath, 1.0, nodeStepSize, nodeIndices);
   newPath.insert(newPath.end(), interNodes.begin(), interNodes.end());
   newPath.push_back(goalNode);
-  nodeIndeces.push_back(oldPath.size() - 1);
+  nodeIndices.push_back(oldPath.size() - 1);
 }
 
 vector<std::array<double, 2>> ITSPlanner::getIntermediateNodesITS(
   vector<pair<double, double>> & path, const double & pathStepSize, const double & nodeStepSize,
-  vector<int> & nodeIndeces)
+  vector<int> & nodeIndices)
 {
   vector<std::array<double, 2>> interNodes;
   if (path.size() == 0) {
@@ -715,7 +715,7 @@ vector<std::array<double, 2>> ITSPlanner::getIntermediateNodesITS(
     distCovered += pathStepSize;
     if (distCovered >= nodeStepSize) {
       interNodes.push_back({path[i].first, path[i].second});
-      nodeIndeces.push_back(i);
+      nodeIndices.push_back(i);
       distCovered = 0;
     }
   }

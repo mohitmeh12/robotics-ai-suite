@@ -10,6 +10,11 @@ endforeach()
 
 file(MAKE_DIRECTORY "${ADBSCAN_BUILD_DEPENDS_OUTPUT_DIR}")
 string(REPLACE "," ";" ADBSCAN_CMAKE_PACKAGES "${ADBSCAN_PACKAGE_COMPONENTS}")
+set(local_debian_packages "")
+foreach(component IN LISTS ADBSCAN_CMAKE_PACKAGES)
+  string(REPLACE "_" "-" debian_component_name "${component}")
+  list(APPEND local_debian_packages "ros-${ROS_DISTRO}-${debian_component_name}")
+endforeach()
 
 function(read_debian_build_dependencies cmake_file output_variable)
   file(STRINGS "${cmake_file}" cmake_lines)
@@ -45,8 +50,18 @@ foreach(component IN LISTS ADBSCAN_CMAKE_PACKAGES)
   endif()
   read_debian_build_dependencies("${package_cmake_file}" build_dependencies)
 
+  if(NOT ADBSCAN_WITH_ONEAPI)
+    list(REMOVE_ITEM build_dependencies
+      "intel-oneapi-dpcpp-cpp-2026.1"
+      "intel-oneapi-compiler-dpcpp-cpp-2026.1"
+      "libpcl-oneapi-dev"
+      "libflann-oneapi-dev")
+  endif()
   list(REMOVE_DUPLICATES build_dependencies)
   string(REPLACE "\${ROS_DISTRO}" "${ROS_DISTRO}" build_dependencies "${build_dependencies}")
+  foreach(local_package IN LISTS local_debian_packages)
+    list(REMOVE_ITEM build_dependencies "${local_package}")
+  endforeach()
   string(JOIN ", " build_dependencies_line ${build_dependencies})
   set(control_directory "${ADBSCAN_BUILD_DEPENDS_OUTPUT_DIR}/${component}/debian")
   string(REPLACE "_" "-" debian_component_name "${component}")

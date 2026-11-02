@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright (C) 2025 Intel Corporation
+// Copyright (C) 2026 Intel Corporation
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,6 +14,7 @@
 // and limitations under the License.
 
 #include "doDBSCAN.hpp"
+#include "adbscan_core/clusterer.hpp"
 
 using namespace std;
 
@@ -255,7 +256,7 @@ double diff(timespec start, timespec end)
 
 Point_xyz doDBSCAN(
   void * p_Data, int LiDAR_data_size, int dimension, Point_xyz target_loc, int & nbr_frame_blocked,
-  vector<Obstacle> & obstacle_list)
+  vector<Obstacle> & obstacle_list, adbscan_core::Backend backend)
 {
   ADBSCAN_Result_t result;
   ADBSCAN_params_t adbscan_params;
@@ -296,6 +297,24 @@ Point_xyz doDBSCAN(
     LiDAR_data_4D_t * velo_n = (LiDAR_data_4D_t *)p_Data;
     LiDAR_data_3D_t * xyz_n = NULL;
     INT32_t num_points = LiDAR_data_size / sizeof(LiDAR_data_4D_t);
+
+    if (velo_n == NULL || num_points <= 0) {
+      std::cout
+        << "[IMPORTANT] ADBSCAN is not executed, since number of points is zero after "
+           "subsampling and filtering. Please try reducing subsampling_ratio parameter or "
+           "increasing the absolute value of x_filter_back, y_filter_left or y_filter_right "
+           "parameters to ensure nonzero number of points after subsampling and filtering"
+        << std::endl;
+      new_target_loc.x = -1.0;
+      new_target_loc.y = 0;
+      new_target_loc.z = 0;
+      if (nbr_frame_blocked > 0) {
+        new_target_loc = target_loc;
+        nbr_frame_blocked--;
+      }
+      obstacle_list.clear();
+      return new_target_loc;
+    }
 
     if (dimension == 3) {
       // Subsample the LiDAR data
@@ -415,7 +434,23 @@ Point_xyz doDBSCAN(
           for (int i = 0; i < num_iter; i++) {
             clock_gettime(clk_id, &t1);  // CLOCK_PROCESS_CPUTIME_ID
 
-            dbscan_adaptiveK(xyz_n, p_k_floor, p_esp, p_class, p_type, num_points);
+            std::vector<adbscan_core::Point> core_points;
+            std::vector<double> core_k;
+            std::vector<double> core_radius;
+            core_points.reserve(num_points);
+            core_k.reserve(num_points);
+            core_radius.reserve(num_points);
+            for (int index = 0; index < num_points; ++index) {
+              core_points.push_back(
+                {xyz_n[index].val[0], xyz_n[index].val[1], xyz_n[index].val[2]});
+              core_k.push_back(p_k_floor[index]);
+              core_radius.push_back(p_esp[index]);
+            }
+            const auto clustered = adbscan_core::cluster(core_points, core_k, core_radius, backend);
+            for (int index = 0; index < num_points; ++index) {
+              p_class[index] = clustered.labels[index];
+              p_type[index] = clustered.types[index];
+            }
 
             clock_gettime(clk_id, &t2);
             cout << i << ". test CPU: ADBScan execution time: " << diff(t1, t2) << " [s]" << endl;

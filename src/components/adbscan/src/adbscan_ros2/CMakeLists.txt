@@ -1,4 +1,4 @@
-# Copyright (C) 2025 Intel Corporation
+# Copyright (C) 2026 Intel Corporation
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -26,6 +26,7 @@ endif()
 
 if(WITH_ONEAPI)
     add_compile_definitions(USE_ONEAPI)
+  set(oneapi_runtime_dependencies "intel-oneapi-runtime-dpcpp-cpp")
 endif()
 
 # Flags
@@ -66,7 +67,12 @@ if(UNIX OR APPLE)
 
   # Generic flags.
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -fno-operator-names -Wformat -Wformat-security \
-    -Wall -fopenmp")
+    -Wall")
+  if(CMAKE_CXX_COMPILER_ID STREQUAL "IntelLLVM")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -qopenmp")
+  else()
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
+  endif()
   set( CUDA_PROPAGATE_HOST_FLAGS OFF )
   set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -D_FORTIFY_SOURCE=2")
   set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -pie")
@@ -85,6 +91,7 @@ endif()
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
+find_package(adbscan_core REQUIRED)
 find_package(TBB REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(geometry_msgs REQUIRED)
@@ -93,7 +100,8 @@ find_package(visualization_msgs REQUIRED)
 find_package(nav2_dynamic_msgs REQUIRED)
 find_package(pcl_conversions REQUIRED)
 if(WITH_ONEAPI)
-    find_package(PCL REQUIRED COMPONENTS common io kdtree octree oneapi_kdtree oneapi_octree)
+  find_package(PCL REQUIRED COMPONENTS common io kdtree octree oneapi_common oneapi_kdtree oneapi_octree)
+  include_directories(/usr/include/flann-oneapi)
 else()
     find_package(PCL REQUIRED COMPONENTS common io)
 endif()
@@ -105,7 +113,7 @@ set(HEADER_FILES src/ADBScan.h src/dbscan_adaptiveK.h src/doDBSCAN.hpp src/print
 add_library(adbscan_lib src/dbscan_adaptiveK.cpp src/doDBSCAN.cpp src/print_info.cpp src/Util.cpp ${HEADER_FILES})
 
 if(WITH_ONEAPI)
-  target_link_libraries(adbscan_lib pcl_oneapi_kdtree pcl_kdtree  pcl_oneapi_octree pcl_octree pcl_io)
+  target_link_libraries(adbscan_lib pcl_oneapi_common pcl_oneapi_kdtree pcl_kdtree pcl_oneapi_octree pcl_octree pcl_io)
 endif()
 
 set(dependencies "geometry_msgs" "rclcpp" "nav2_dynamic_msgs" "PCL" "pcl_conversions" "sensor_msgs" "visualization_msgs")
@@ -117,7 +125,7 @@ link_directories(${PCL_LIBRARY_DIRS})
 add_definitions(${PCL_DEFINITIONS})
 
 add_executable(adbscan_sub src/adbscan_sub.cpp src/print_info.cpp src/Util.cpp src/doDBSCAN.cpp src/Util.cpp src/dbscan_adaptiveK.cpp)
-ament_target_dependencies(adbscan_sub ${dependencies})
+ament_target_dependencies(adbscan_sub ${dependencies} adbscan_core)
 target_link_libraries(adbscan_sub
     ${PCL_LIBRARIES}
     TBB::tbb
@@ -179,7 +187,7 @@ install(TARGETS
   adbscan_sub
   DESTINATION lib/${PROJECT_NAME})
 
-install(DIRECTORY config launch
+install(DIRECTORY config
   DESTINATION share/${PROJECT_NAME}/
 )
 
@@ -195,6 +203,7 @@ configure_ros_debian_package_with_metadata(
     "cmake"
     "ninja-build"
     "ros-${ROS_DISTRO}-ament-cmake"
+    "ros-${ROS_DISTRO}-adbscan-core"
     "ros-${ROS_DISTRO}-ament-cmake-gtest"
     "ros-${ROS_DISTRO}-ament-lint-auto"
     "ros-${ROS_DISTRO}-ament-lint-common"
@@ -207,12 +216,19 @@ configure_ros_debian_package_with_metadata(
     "ros-${ROS_DISTRO}-visualization-msgs"
     "libpcl-dev"
     "libtbb-dev"
+    "intel-oneapi-dpcpp-cpp-2026.1"
+    "intel-oneapi-compiler-dpcpp-cpp-2026.1"
+    "libpcl-oneapi-dev"
+    "libflann-oneapi-dev"
   DEPENDS
+    ${oneapi_runtime_dependencies}
+    "ros-${ROS_DISTRO}-adbscan-core"
     "ros-${ROS_DISTRO}-builtin-interfaces"
     "ros-${ROS_DISTRO}-geometry-msgs"
-    "ros-${ROS_DISTRO}-nav2-dynamic-msgs"
+    "ros-${ROS_DISTRO}-nav2-dynamic-msgs (>= 0.0.1-1)"
     "ros-${ROS_DISTRO}-pcl-conversions"
     "ros-${ROS_DISTRO}-rclcpp"
+    "ros-${ROS_DISTRO}-ros2run"
     "ros-${ROS_DISTRO}-sensor-msgs"
     "ros-${ROS_DISTRO}-visualization-msgs"
 )

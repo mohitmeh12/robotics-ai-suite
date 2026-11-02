@@ -8,11 +8,10 @@ SPDX-License-Identifier: Apache-2.0
 
 ---
 
-This tutorial serves as an example for understanding the utilization of
-the ROS 2 OpenVINO™ node. It outlines the steps for installing and
-executing the semantic segmentation model using the ROS 2 OpenVINO™
-toolkit. This tutorial uses the Intel® RealSense™ camera image as input
-and performs inference on CPU, GPU devices.
+This tutorial demonstrates semantic segmentation with the ROS 2
+OpenVINO™ node. It explains how to install the node and run a model using
+images from an Intel® RealSense™ camera. Inference can run on a CPU or
+GPU.
 
 ## Prerequisites
 
@@ -22,13 +21,15 @@ and performs inference on CPU, GPU devices.
 - [Install Robotics AI Dev Kit Deb packages](https://developer.robotics.intel.com/development-stack/platform_foundation/getting_started/step_by_step/#6-install-robotics-ai-suite-deb-packages)
 - [Install the Intel® NPU Driver on Intel® Core™ Ultra Processors (if applicable)](https://developer.robotics.intel.com/development-stack/platform_foundation/getting_started/step_by_step/#7-install-the-intel-npu-driver-on-intel-core-ultra-processors)
 
-## Install OpenVINO™ tutorial packages
+## Install the tutorial package
 
-``` bash
+```bash
 sudo apt install ros-humble-segmentation-realsense-tutorial
 ```
 
-## Run Demo with Intel® RealSense™ Topic Input
+For ROS 2 Jazzy, replace `humble` in the package name with `jazzy`.
+
+## Run the Demo with Intel® RealSense™ Image Topics
 
 Run one of the following commands to launch the segmentation tutorial
 with a specific inference engine:
@@ -46,12 +47,11 @@ with a specific inference engine:
   ```
 
 > [!NOTE]
-> If no device is specified, the GPU is selected by default as inference
-> engine.
+> If you do not specify a device, the node uses the GPU by default.
 
-Once the tutorial is started, the `deeplabv3` model is downloaded,
-converted into IR files, and the inference process begins, utilizing the
-input from the Intel® RealSense™ camera.
+When launched, the node downloads the `deeplabv3` model, converts it to
+OpenVINO IR format, and begins inference on images from the Intel®
+RealSense™ camera.
 
-To exit the application, press `Ctrl-c` in the terminal where the launch
-script was executed.
+To stop the application, press `Ctrl+C` in the terminal running the
+launch command.

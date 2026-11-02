@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # pylint: disable=duplicate-code
 # SPDX-License-Identifier: Apache-2.0
-# Copyright (C) 2025 Intel Corporation
+# Copyright (C) 2026 Intel Corporation
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -31,6 +31,7 @@ from utils.wav_processing import (
 
 class WaveRNNIE:  # pylint: disable=too-many-instance-attributes
     """OpenVINO-based WaveRNN vocoder for mel-to-waveform synthesis."""
+
     def __init__(  # pylint: disable=too-many-arguments,too-many-positional-arguments
         self,
         model_upsample,
@@ -40,7 +41,7 @@ class WaveRNNIE:  # pylint: disable=too-many-instance-attributes
         overlap=550,
         hop_length=275,
         bits=9,
-        device='CPU',
+        device="CPU",
         verbose=False,
         upsampler_width=-1,
     ):
@@ -82,15 +83,15 @@ class WaveRNNIE:  # pylint: disable=too-many-instance-attributes
         # fixed number of the mels in mel-spectrogramm
         self.mel_len = self.upsample_net.inputs[0].shape[1] - 2 * self.pad
         self.rnn_width = next(
-            (inp for inp in self.rnn_net.inputs if inp.any_name == 'x'),
+            (inp for inp in self.rnn_net.inputs if inp.any_name == "x"),
             self.rnn_net.inputs[0],
         ).shape[1]
 
     def load_network(self, model_xml):
         """Read an OpenVINO IR model from disk."""
-        model_bin_name = '.'.join(osp.basename(model_xml).split('.')[:-1]) + '.bin'
+        model_bin_name = ".".join(osp.basename(model_xml).split(".")[:-1]) + ".bin"
         model_bin = osp.join(osp.dirname(model_xml), model_bin_name)
-        print(f'Loading network files:\n\t{model_xml}\n\t{model_bin}')
+        print(f"Loading network files:\n\t{model_xml}\n\t{model_bin}")
         net = self.core.read_model(model=model_xml)
         return net
 
@@ -101,11 +102,7 @@ class WaveRNNIE:  # pylint: disable=too-many-instance-attributes
             for _b_s in batch_sizes:
                 # Create a new model instance with batch size
                 rt_info = net.get_rt_info()
-                model_path = (
-                    rt_info["model_path"]
-                    if "model_path" in rt_info
-                    else None
-                )
+                model_path = rt_info["model_path"] if "model_path" in rt_info else None
                 reshaped_net = self.core.read_model(model=model_path)
                 if reshaped_net is None:
                     # If we can't reload, reshape the existing one
@@ -145,9 +142,9 @@ class WaveRNNIE:  # pylint: disable=too-many-instance-attributes
             if i_end > mels.shape[1]:
                 last_padding = i_end - mels.shape[1]
                 mel = np.pad(
-                    mels[:, i_start: mels.shape[1], :],  # fmt: skip
+                    mels[:, i_start : mels.shape[1], :],  # fmt: skip
                     ((0, 0), (0, last_padding), (0, 0)),
-                    'constant',
+                    "constant",
                     constant_values=0,
                 )
             else:
@@ -172,7 +169,7 @@ class WaveRNNIE:  # pylint: disable=too-many-instance-attributes
         aux, _ = fold_with_overlap(aux, self.target, self.overlap)
 
         audio = self.forward_rnn(mels, upsampled_mels, aux)
-        audio = (audio * (2**15 - 1)).astype('<h')
+        audio = (audio * (2**15 - 1)).astype("<h")
 
         return audio
 
@@ -182,7 +179,7 @@ class WaveRNNIE:  # pylint: disable=too-many-instance-attributes
 
         out = self.upsample_exec(mels)
         upsample_out = out[self.upsample_exec.outputs[0]]
-        upsample_mels = upsample_out[:, self.indent:-self.indent, :]
+        upsample_mels = upsample_out[:, self.indent : -self.indent, :]
         aux = out[self.upsample_exec.outputs[1]]
         return upsample_mels, aux
 
@@ -197,9 +194,7 @@ class WaveRNNIE:  # pylint: disable=too-many-instance-attributes
         seq_len = min(seq_len, aux_split[0].shape[1])
 
         if b_size not in self.batch_sizes:
-            raise ValueError(
-                f'Incorrect batch size {b_size}. Correct should be 2 ** something'
-            )
+            raise ValueError(f"Incorrect batch size {b_size}. Correct should be 2 ** something")
 
         active_network = self.batch_sizes.index(b_size)
 
@@ -214,14 +209,14 @@ class WaveRNNIE:  # pylint: disable=too-many-instance-attributes
 
             out = self.rnn_exec[active_network](
                 {
-                    'm_t': m_t,
-                    'a1_t': a1_t,
-                    'a2_t': a2_t,
-                    'a3_t': a3_t,
-                    'a4_t': a4_t,
-                    'h1.1': h1,
-                    'h2.1': h2,
-                    'x': x,
+                    "m_t": m_t,
+                    "a1_t": a1_t,
+                    "a2_t": a2_t,
+                    "a3_t": a3_t,
+                    "a4_t": a4_t,
+                    "h1.1": h1,
+                    "h2.1": h2,
+                    "x": x,
                 }
             )
 
@@ -251,7 +246,8 @@ class WaveRNNIE:  # pylint: disable=too-many-instance-attributes
 
 class MelGANIE:  # pylint: disable=too-many-instance-attributes
     """OpenVINO-based MelGAN vocoder for mel-to-waveform synthesis."""
-    def __init__(self, model, core, device='CPU', default_width=800):
+
+    def __init__(self, model, core, device="CPU", default_width=800):
         """
         return class provided MelGAN inference.
 
@@ -280,9 +276,9 @@ class MelGANIE:  # pylint: disable=too-many-instance-attributes
 
     def load_network(self, model_xml):
         """Read an OpenVINO IR model from disk."""
-        model_bin_name = '.'.join(osp.basename(model_xml).split('.')[:-1]) + '.bin'
+        model_bin_name = ".".join(osp.basename(model_xml).split(".")[:-1]) + ".bin"
         model_bin = osp.join(osp.dirname(model_xml), model_bin_name)
-        print(f'Loading network files:\n\t{model_xml}\n\t{model_bin}')
+        print(f"Loading network files:\n\t{model_xml}\n\t{model_bin}")
         net = self.core.read_model(model=model_xml)
         return net
 
@@ -309,7 +305,7 @@ class MelGANIE:  # pylint: disable=too-many-instance-attributes
             last_padding = self.mel_len - mel.shape[2] % self.mel_len
 
         mel = np.pad(
-            mel, ((0, 0), (0, 0), (0, last_padding)), 'constant', constant_values=-11.5129
+            mel, ((0, 0), (0, 0), (0, last_padding)), "constant", constant_values=-11.5129
         )
 
         active_net = -1

@@ -1,5 +1,5 @@
 <!--
-Copyright (C) 2025 Intel Corporation
+Copyright (C) 2026 Intel Corporation
 
 SPDX-License-Identifier: Apache-2.0
 -->
@@ -9,193 +9,142 @@ SPDX-License-Identifier: Apache-2.0
 ---
 
 In this version of ADBSCAN, the algorithm has been optimized for Intel®
-SOC by replacing linear neighbor point search with an optimized oneAPI™
-PCL library (offloaded to GPU), as well as refactoring the clustering
-algorithm. It has been tested and validated on 13th Generation Intel®
-Core™ processors with Intel® Iris® X^e^ Integrated Graphics, 12th
-Generation Intel® Core™ processors with Intel® Iris® X^e^ Integrated
-Graphics and 11th Generation Intel® Core™ processors with Intel® Iris®
-X^e^ Integrated Graphics. This tutorial describes how to run this
-Intel-optimized ADBSCAN algorithm and compare the execution time with
-the unoptimized version.
+architectures by replacing linear neighbor point search with optimized
+KD-tree and octree neighbor search using the Intel® oneAPI™ SYCL toolkit,
+as well as refactoring the clustering algorithm into the reusable `adbscan_core`
+library. It has been tested and validated across Intel® Core™ Ultra and
+11th–14th Generation Intel® Core™ processors with integrated Intel® Iris® X^e^
+and Intel® Arc™ graphics. This tutorial describes how to build or package
+the Intel-optimized ADBSCAN algorithm, select backends at runtime, and compare
+execution times against the CPU baseline.
 
 ## Getting Started
 
-The Intel-optimized and unoptimized versions of the algorithm are
-distributed as `ros-humble-adbscan-oneapi` and
-`ros-humble-adbscan-ros2`, respectively. We demonstrate the gain in
-latency for a ROS 2 bag file with point cloud data from a Intel®
-RealSense™ camera. The amount of gain is prominent when the input is
-dense or the number of input points is large. In case of a 2D LIDAR, the
-point cloud is comparatively sparse and hence, not showed here.
+Hardware acceleration is provided directly through `adbscan_core` when built
+with the `WITH_ONEAPI=ON` option. When enabled, a single installation supports
+both standard CPU clustering (`legacy_cpu`) and accelerated oneAPI backends
+(`oneapi_kdtree`, `oneapi_octree`, `pcl_kdtree`) selectable at runtime via the
+`core_backend` parameter. We demonstrate the gain in latency for a ROS 2 bag
+file with point cloud data from an Intel® RealSense™ camera. The gain is most
+prominent when the input point cloud is dense or contains many points.
 
 ## Prerequisites
 
 - [Prepare the target system](https://developer.robotics.intel.com/development-stack/platform_foundation/getting_started/)
 - [Setup the Robotics AI Dev Kit APT Repositories](https://developer.robotics.intel.com/development-stack/platform_foundation/getting_started/step_by_step/#3-set-up-robotics-ai-suite-oneapi-and-graphics-apt-repositories)
-- [Install OpenVINO™ Packages](https://developer.robotics.intel.com/development-stack/platform_foundation/getting_started/step_by_step/#4-install-openvino-packages)
 - [Install Robotics AI Dev Kit Deb packages](https://developer.robotics.intel.com/development-stack/platform_foundation/getting_started/step_by_step/#6-install-robotics-ai-suite-deb-packages)
-- [Install the Intel® NPU Driver on Intel® Core™ Ultra Processors (if applicable)](https://developer.robotics.intel.com/development-stack/platform_foundation/getting_started/step_by_step/#7-install-the-intel-npu-driver-on-intel-core-ultra-processors)
+- Intel® oneAPI Base Toolkit (specifically the DPC++/C++ Compiler `icpx`) and PCL OneAPI libraries (`libpcl-oneapi-kdtree`, `libpcl-oneapi-octree`).
+- Working Intel GPU driver (Level Zero runtime). Verify GPU availability with `lspci` and `sycl-ls`.
 
-## Install and run the ROS 2 bag file Deb package
+## Building or Installing with oneAPI Acceleration
 
-Install the following package with ROS 2 bag files in order to publish
-point cloud data from LIDAR and Intel® RealSense™ camera:
+### Building from Source
 
-> ``` bash
-> sudo apt install ros-humble-bagfile-laser-pointcloud
-> ```
+In a ROS 2 workspace, build with the Intel oneAPI compiler and flag:
 
-Run the following commands in a terminal:
+```bash
+source /opt/ros/<distro>/setup.bash
+colcon build --packages-select adbscan_core adbscan_ros2 \
+  --cmake-args -DWITH_ONEAPI=ON -DCMAKE_CXX_COMPILER=icpx
+```
 
-> ``` bash
-> source /opt/ros/humble/setup.bash
-> ros2 bag play --loop /opt/ros/humble/share/bagfiles/laser-pointcloud
-> ```
+### Packaging and Installing Debian Packages
 
-This command will launch the ROS 2 bag file and publish the recorded
-point cloud data to respective topics. You will view the following
-screen output:
+To produce Debian packages with oneAPI acceleration:
 
-> ![image](images/rosbag_play_screen.png)
+```bash
+CXX=icpx make package ROS_DISTRO=<distro> WITH_ONEAPI=ON
+sudo apt update
+sudo apt install ./build/debian-packages/packages/*.deb
+```
 
-`ros2 topic list` command will show a list of the published topics which
-include `/scan` (point cloud from 2D LIDAR) and
-`/camera/depth/color/points` (point cloud from Intel® RealSense™
-camera).
+## Running the Demo with Recorded Data
 
-## Install and run optimized Deb package
+### Run the ROS 2 Bag File
 
-Install `ros-humble-adbscan-oneapi` Deb package from Intel® Robotics AI
-Dev Kit APT repository:
+Install the recorded bag file package if available, or use any recorded
+point cloud bag:
 
-> ``` bash
-> sudo apt update
-> sudo apt install ros-humble-adbscan-oneapi
-> ```
+```bash
+# Ubuntu 24.04 (Jazzy)
+sudo apt install ros-jazzy-bagfile-laser-pointcloud
+source /opt/ros/jazzy/setup.bash
+ros2 bag play --loop /opt/ros/jazzy/share/bagfiles/laser-pointcloud
 
-Run the following command in a terminal:
+# Ubuntu 22.04 (Humble)
+sudo apt install ros-humble-bagfile-laser-pointcloud
+source /opt/ros/humble/setup.bash
+ros2 bag play --loop /opt/ros/humble/share/bagfiles/laser-pointcloud
+```
 
-> ``` bash
-> source /opt/ros/humble/setup.bash
-> ros2 run adbscan_ros2 adbscan_sub --ros-args --params-file /opt/ros/humble/share/adbscan_ros2/config/adbscan_sub_RS.yaml
-> ```
+This launches the bag playback and publishes point cloud data to
+`/camera/depth/color/points` and `/scan`.
 
-This will print tables with the benchmarking data as showed below:
+### Run Intel-Optimized ADBSCAN on GPU
 
-> ![image](images/benchmarking_picture_adbscan.png)
+Run the subscriber node with the oneAPI KD-tree or octree backend offloaded
+to the GPU:
 
-The table shows a breakdown between pre-processing, ADBSCAN execution
-and post-processing time. The caption at the bottom of the table will
-print which PCL library is being used.
+```bash
+source /opt/ros/<distro>/setup.bash
+ONEAPI_DEVICE_SELECTOR=level_zero:gpu ros2 run adbscan_ros2 adbscan_sub --ros-args \
+  --params-file "$(ros2 pkg prefix adbscan_ros2)/share/adbscan_ros2/config/adbscan_sub_RS.yaml" \
+  -p core_backend:=oneapi_kdtree
+```
 
-## Install and run standard (unoptimized) Deb package
+To run with the oneAPI octree backend:
 
-Install `ros-humble-adbscan-ros2` Deb package from Intel® Robotics AI
-Dev Kit APT repository
+```bash
+ONEAPI_DEVICE_SELECTOR=level_zero:gpu ros2 run adbscan_ros2 adbscan_sub --ros-args \
+  --params-file "$(ros2 pkg prefix adbscan_ros2)/share/adbscan_ros2/config/adbscan_sub_RS.yaml" \
+  -p core_backend:=oneapi_octree
+```
 
-> ``` bash
-> sudo apt update
-> sudo apt install ros-humble-adbscan-ros2
-> ```
+### Run Baseline CPU ADBSCAN
 
-Run the following command in a terminal
+Run the same node executable with the CPU baseline backend:
 
-> ``` bash
-> source /opt/ros/humble/setup.bash
-> ros2 run adbscan_ros2 adbscan_sub --ros-args --params-file /opt/ros/humble/share/adbscan_ros2/config/adbscan_sub_RS.yaml
-> ```
+```bash
+ros2 run adbscan_ros2 adbscan_sub --ros-args \
+  --params-file "$(ros2 pkg prefix adbscan_ros2)/share/adbscan_ros2/config/adbscan_sub_RS.yaml" \
+  -p core_backend:=legacy_cpu
+```
 
-This will print a similar table with the benchmarking data.
+You will observe that ADBSCAN clustering execution time is significantly faster
+when hardware-accelerated on GPU compared to the unaccelerated CPU path. See
+[ADBSCAN Behavior Baseline](adbscan-behavior-baseline.md) for detailed latency,
+p95, and throughput benchmarks measured across devices.
 
-> ![image](images/benchmark_table_unoptimized.png)
+## Re-configurable Parameters
 
-You will see that the ADBSCAN execution time is much smaller for the
-optimized version compared to the standard one. The pre-processing and
-post-processing time should be more or less of the same range in both
-versions, since the input bag file is identical. The amount of gain in
-execution time will depend on the system configuration, the size of the
-point cloud data in the input frames etc. We observed an average gain of
-\~5-8x in 13th Generation Intel® Core™ processors with Intel® Iris® X^e^
-Integrated Graphics, 12th Generation Intel® Core™ processors with Intel®
-Iris® X^e^ Integrated Graphics and 11th Generation Intel® Core™
-processors with Intel® Iris® X^e^ Integrated Graphics for this specific
-ROS 2 bag file.
-
-## Re-configurable parameters
-
-The optimized ADBSCAN has a user-defined parameter called
-`oneapi_library` to choose from a set of PCL libraries: `oneapi_kdtree`,
-`oneapi_octree`, `pcl_kdtree`. The default value is `oneapi_kdtree`.
-Moreover, one can run both optimized and unoptimized packages with a
-parameter called `benchmark_number_of_frames`. It will take an integer
-(greater or equal to 1) as input and the benchmarking table will produce
-the average execution time of `benchmark_number_of_frames` frames,
-instead of a single frame (default value). For example, you can use the
-following command to run the optimized ADBSCAN with `oneapi_octree`
-library and display the benchmarking data for an average of 5 frames:
-
-> ``` bash
-> ros2 run adbscan_ros2 adbscan_sub --ros-args --params-file /opt/ros/humble/share/adbscan_ros2/config/adbscan_sub_RS.yaml  -p benchmark_number_of_frames:=5 -p oneapi_library:=oneapi_octree
-> ```
-
-A complete list of the reconfigurable parameters is given below:
-
-| Parameter                        | Description                                                                                                                                                                                                                                   |
-|---------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `Lidar_type`                    | Type of the point cloud sensor. For Intel® RealSense™ camera and LIDAR inputs, the default value is set to `RS` and `2D`, respectively.                                                                                                       |
-| `Lidar_topic`                   | Name of the topic publishing point cloud data.                                                                                                                                                                                              |
-| `Verbose`                      | If this flag is set to `True`, the locations of the detected target objects will be printed as the screen log.                                                                                                                               |
-| `subsample_ratio`              | This is the downsampling rate of the original point cloud data. Default value = 15 (i.e., every 15-th data in the original point cloud is sampled and passed to the core ADBSCAN algorithm).                                                    |
-| `x_filter_back`                | Point cloud data with x-coordinate > `x_filter_back` are filtered out (positive x direction lies in front of the robot).                                                                                                                     |
-| `y_filter_left`, `y_filter_right` | Point cloud data with y-coordinate > `y_filter_left` and y-coordinate < `y_filter_right` are filtered out (positive y-direction is to the left of robot and vice versa).                                                                     |
-| `z_filter`                     | Point cloud data with z-coordinate < `z_filter` will be filtered out. This option will be ignored in case of 2D Lidar.                                                                                                                        |
-| `Z_based_ground_removal`       | Filtering in the z-direction will be applied only if this value is non-zero. This option will be ignored in case of 2D Lidar.                                                                                                                 |
-| `base`, `coeff_1`, `coeff_2`, `scale_factor` | These are the coefficients used to calculate the adaptive parameters of the ADBSCAN algorithm. These values are pre-computed and recommended to keep unchanged.                                                                          |
-| `oneapi_library`               | Available options are: `oneapi_kdtree`, `oneapi_octree`, `pcl_kdtree`. `oneapi_kdtree` and `oneapi_octree` allow the algorithm to use optimized oneAPI™ KdTree or octree library and offload the neighbor point search method to GPU.          |
-|                               | `pcl_kdtree` option uses the standard PCL KdTree library, not optimized for Intel® SOC.                                                                                                                                                       |
-| `benchmark_number_of_frames`   | Any integer greater or equal to 1. This is the number of frames over which the average execution time is executed and printed in the benchmarking table.                                                                                       |
+| Parameter | Type | Default | Description |
+| --- | --- | --- | --- |
+| `use_adbscan_core` | bool | `true` | When true, invokes the shared `adbscan_core` library. |
+| `core_backend` | string | `legacy_cpu` | Neighbor search backend: `legacy_cpu`, `pcl_kdtree`, `oneapi_kdtree`, `oneapi_octree`. Accelerated backends require `WITH_ONEAPI=ON`. |
+| `Lidar_type` | string | `RS` | Type of sensor (`RS`, `2D`, or `3D`). |
+| `Lidar_topic` | string | `/camera/depth/color/points` | Topic publishing sensor data. |
+| `Verbose` | bool | `true` | Prints cluster count and execution timing. |
+| `subsample_ratio` | float | `15.0` | Downsampling ratio applied to point cloud data. |
+| `x_filter_back`, `y_filter_left`, `y_filter_right`, `z_filter` | float | varies | Spatial bounding box limits for point filtering. |
+| `Z_based_ground_removal` | float | `1.0` | Applies Z ground plane filtering if non-zero. |
+| `base`, `coeff_1`, `coeff_2`, `scale_factor` | float | varies | Pre-computed polynomial coefficients for range-adaptive clustering. |
+| `oneapi_library` | string | `oneapi_kdtree` | Legacy backend selector used when `use_adbscan_core:=false`. |
+| `benchmark_number_of_frames` | int | `1` | Number of frames over which to average timing measurements. |
 
 ## Troubleshooting
 
-- Failed to install Deb package: Please make sure to run
-  `sudo apt update` before installing the necessary Deb packages.
+- **Target Device Selection**: Ensure `ONEAPI_DEVICE_SELECTOR=level_zero:gpu`
+  (for GPU) or `ONEAPI_DEVICE_SELECTOR=opencl:cpu` (for SYCL CPU) is exported in
+  the running terminal. Run `sycl-ls` to list available SYCL devices.
+- **Empty Output**: If the log indicates zero points after subsampling/filtering,
+  check `subsample_ratio` or expand `x_filter_back`, `y_filter_right`, and
+  `y_filter_left`.
+- **CPU Affinity (E-cores vs P-cores)**: On hybrid Intel® Core™ processors (12th Gen+,
+  Intel® Core™ Ultra), the Linux kernel may schedule worker threads onto E-cores. Use
+  `taskset` to bind the process to P-cores for peak performance:
 
-- You can stop the demo anytime by pressing `ctrl-C`.
-
-- The screen log will show [number of points after
-  subsampling]{.title-ref} and [number of points after
-  filtering]{.title-ref}. If these values are zero, please make sure to
-  adjust the following parameters to make sure these values are greater
-  than zero.
-
-  > - Decrease [subsample_ratio]{.title-ref}
-  > - Increase the absolute values of [x_filter_back]{.title-ref},
-  >   [y_filter_right]{.title-ref}, [y_filter_left]{.title-ref}. Please
-  >   see the description of these parameters in the table and adjust
-  >   according to your environment.
-
-- IA-optimized ADBSCAN offloads the neighbor search to GPUs when using
-  [oneapi_kdtree]{.title-ref} and [oneapi_octree]{.title-ref} library.
-  Please make sure that your system is equipped with working gpu, if
-  using these libraries. You can use [lspci]{.title-ref} command in a
-  |Linux| terminal to view GPU info.
-
-- `ros-humble-adbscan-ros2` and `ros-humble-adbscan-oneapi` are mutually
-  exclusive Deb packages. Please refrain from installing them
-  simultaneously like this
-  `apt install ros-humble-adbscan-ros2 ros-humble-adbscan-oneapi`.
-  Always install the packages sequentially, as showed in this document.
-
-- Some newer 13th Generation Intel® Core™ and Intel® Core™ Ultra
-  Processors may experience lower performance when the |Linux| kernel
-  schedules the `adbscan_ros2` process to an efficient-core (E-core). To
-  achieve better performance, you can utilize the `taskset` command to
-  set the process\'s CPU affinity. For example, you can direct
-  `adbscan_ros2` to run on CPU core 0 which is a performance-core
-  (P-core).
-
-  ``` bash
-  source /opt/ros/humble/setup.bash
-  taskset -c 0 ros2 run adbscan_ros2 adbscan_sub --ros-args --params-file /opt/ros/humble/share/adbscan_ros2/config/adbscan_sub_RS.yaml
+  ```bash
+  taskset -c 0-3 ros2 run adbscan_ros2 adbscan_sub --ros-args \
+    --params-file "$(ros2 pkg prefix adbscan_ros2)/share/adbscan_ros2/config/adbscan_sub_RS.yaml" \
+    -p core_backend:=oneapi_kdtree
   ```

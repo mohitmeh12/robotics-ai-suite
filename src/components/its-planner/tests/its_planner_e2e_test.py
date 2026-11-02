@@ -35,7 +35,7 @@ STARTUP_TIMEOUT_SECONDS = 120.0
 PLAN_TIMEOUT_SECONDS = 30.0
 PLAN_ATTEMPTS = 3
 
-_temp_dir = None
+_temp_dirs = []
 
 
 def _write_free_map(directory):
@@ -119,10 +119,10 @@ def _write_params(directory, map_yaml):
 
 def generate_test_description():
     """Launch map_server, the ITS planner_server and lifecycle management."""
-    global _temp_dir
-    _temp_dir = tempfile.mkdtemp(prefix="its_planner_e2e_")
-    map_yaml = _write_free_map(_temp_dir)
-    params = _write_params(_temp_dir, map_yaml)
+    temp_dir = tempfile.mkdtemp(prefix="its_planner_e2e_")
+    _temp_dirs.append(temp_dir)
+    map_yaml = _write_free_map(temp_dir)
+    params = _write_params(temp_dir, map_yaml)
     return LaunchDescription(
         [
             Node(
@@ -162,8 +162,10 @@ def generate_test_description():
 class TestItsPlannerE2E(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
-        if _temp_dir and os.path.isdir(_temp_dir):
-            shutil.rmtree(_temp_dir, ignore_errors=True)
+        for temp_dir in _temp_dirs:
+            if os.path.isdir(temp_dir):
+                shutil.rmtree(temp_dir, ignore_errors=True)
+        _temp_dirs.clear()
 
     def setUp(self):
         rclpy.init()
@@ -197,7 +199,8 @@ class TestItsPlannerE2E(unittest.TestCase):
             return None
 
         result_future = goal_handle.get_result_async()
-        rclpy.spin_until_future_complete(self.node, result_future, timeout_sec=PLAN_TIMEOUT_SECONDS)
+        rclpy.spin_until_future_complete(self.node, result_future,
+                                         timeout_sec=PLAN_TIMEOUT_SECONDS)
         wrapped_result = result_future.result()
         if wrapped_result is None:
             return None

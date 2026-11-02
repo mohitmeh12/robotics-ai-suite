@@ -16,14 +16,15 @@ The ITS Planner is a global path planner module for ROS2 Navigation based on Int
 Search (ITS). This plugin is designed for efficient path planning using either Probabilistic Road Map (PRM) or
 Deterministic Road Map (DRM) approaches.
 
-The inputs for the ITS planner are global 2d_costmap (`nav2_costmap_2d::Costmap2D`), start and goal pose
-(`geometry_msgs::msg::PoseStamped`). The outputs are 2D waypoints of the path. The ITS planner converts the
-2d_costmap to a roadmap which can be saved in a txt file and reused for multiple inquiries. Once a roadmap is
-generated, the ITS conducts a two-way search to find a path from the source to destination. Either the smoothing
-filter or catmull spline interpolation can be used to create a smooth and continuous path. The generated smooth
-path is in the form of ROS navigation message type (`nav_msgs::msg`).
+The ITS planner takes a global 2D costmap (`nav2_costmap_2d::Costmap2D`) and start and goal poses
+(`geometry_msgs::msg::PoseStamped`) as input. It outputs 2D path waypoints. The planner converts the costmap
+into a roadmap, which can be saved to a text file and reused for multiple queries. Once a roadmap is generated,
+ITS conducts a two-way search to find a path from the source to the destination. A smoothing filter or Catmull
+spline interpolation can be used to create a smooth, continuous path. The resulting path uses the ROS navigation
+message type (`nav_msgs::msg`).
 
-Currently, the ITS plugin does not support continuous replanning. To use this plugin, a simple behavior tree with compute path to pose and follow path should be used.
+The ITS plugin does not support continuous replanning. Use a simple behavior tree with ComputePathToPose and
+FollowPath nodes.
 
 ## Get Started
 
@@ -178,15 +179,15 @@ planner_server:
 
 **Parameter Descriptions:**
 
-- `catmull_spline`: if true, the generated path from the ITS will be interpolated with catmull spline method; otherwise smoothing filter will be used to smooth the path
-- `smoothing_window`: window size for the smoothing filter; unit is grid size
-- `buffer_size`: during the roadmap generation, the samples are generated away from obstacles. The buffer size dictates how far the roadmap samples should be away from obstacles
-- `build_road_map_once`: If true, the roadmap will be loaded from the saved file, otherwise a new roadmap will be generated
-- `min_samples`: minimum number of samples required to generate the roadmap
-- `roadmap`: can be either `PROBABILISTIC` or `DETERMINISTIC`
-- `w`: the width of the window for intelligent sampling
-- `h`: the height of the window for intelligent sampling
-- `n`: the minimum number of samples that is required in an area defined by `w` and `h`
+- `catmull_spline`: If true, interpolate the ITS path using a Catmull spline; otherwise, use a smoothing filter.
+- `smoothing_window`: The smoothing filter's window size, measured in grid cells.
+- `buffer_size`: The minimum distance, in grid cells, between roadmap samples and obstacles.
+- `build_road_map_once`: If true, load the roadmap from the saved file; otherwise, generate a new roadmap.
+- `min_samples`: The minimum number of samples required to generate the roadmap.
+- `roadmap`: Either `PROBABILISTIC` or `DETERMINISTIC`.
+- `w`: The width of the window used for intelligent sampling.
+- `h`: The height of the window used for intelligent sampling.
+- `n`: The minimum number of samples required in an area defined by `w` and `h`.
 
 ### Running ITS Planner
 
@@ -204,7 +205,7 @@ else
 fi
 ```
 
-To launch the default ITS planner which is based on differential drive robot, run:
+To launch the default ITS planner for a differential-drive robot, run:
 
 ```bash
 ros2 launch nav2_bringup tb3_simulation_launch.py \
@@ -213,7 +214,7 @@ ros2 launch nav2_bringup tb3_simulation_launch.py \
   default_bt_xml_filename:=/opt/ros/$ROS_DISTRO/share/its_planner/navigate_w_recovery_${ROS_DISTRO}.xml
 ```
 
-ITS Planner also supports Ackermann steering; to launch the Ackermann ITS planner run:
+ITS Planner also supports Ackermann steering. To launch the Ackermann ITS planner, run:
 
 ```bash
 ros2 launch nav2_bringup tb3_simulation_launch.py \
@@ -224,21 +225,22 @@ ros2 launch nav2_bringup tb3_simulation_launch.py \
 
 ### Navigation Usage
 
-After launching the ROS2 navigation and the ITS planner plugin, look at where the robot is in the Gazebo world, and find that spot on the Rviz display.
+After launching ROS 2 Navigation and the ITS planner plugin, locate the robot in the Gazebo world and find the
+same position in the RViz display.
 
-1. From Rviz set the initial pose by clicking the "2D Pose Estimate" button
-2. Click on the map where the robot is
-3. Click the "Navigation2 Goal" button and choose goal position
+1. In RViz, set the initial pose by clicking the "2D Pose Estimate" button.
+2. Click the map at the robot's position.
+3. Click the "Navigation2 Goal" button and choose a goal position.
 
-Now a path will be generated and the robot will start following the path to navigate toward the goal position.
+The planner generates a path, and the robot follows it toward the goal.
 
-For detailed instructions, follow the ROS2 Navigation usage guide: [Navigation usage](https://docs.nav2.org/getting_started/index.html#navigating)
+For detailed instructions, follow the ROS 2 Navigation usage guide: [Navigation usage](https://docs.nav2.org/getting_started/index.html#navigating)
 
 ### Ackermann Steering Support
 
 This plugin also supports a global path planner based on ITS for Ackermann steering vehicles, which maneuver with car-like controls and a limited turning radius. This version of the planner is based on the concept of [Dubins Paths](https://en.wikipedia.org/wiki/Dubins_path), and uses an adapted version of [AndrewWalker's Dubins Curves implementation](https://github.com/AndrewWalker/Dubins-Curves).
 
-The Ackermann steering version of this plugin utilizes some additional parameters which can be found in `nav2_params_dubins_${ROS_DISTRO}.yaml`:
+The Ackermann steering version of this plugin uses additional parameters in `nav2_params_dubins_${ROS_DISTRO}.yaml`:
 
 <!-- markdownlint-disable MD033 -->
 <pre><code>planner_server:

@@ -267,7 +267,7 @@ uv run python src/monitor_stack.py --node /slam_toolbox
 
 ## 📚 Need More Details?
 
-See the full [README.md](../README.md) for:
+See the full [README.md](README.md) for:
 
 - Individual script documentation
 - Detailed API reference

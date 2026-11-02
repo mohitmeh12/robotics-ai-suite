@@ -1,3 +1,9 @@
+ros-humble-adbscan-ros2 (2.3-4) UNRELEASED; urgency=low
+
+  * Refresh Debian packaging for the current workspace build.
+
+ -- ECI Maintainer <eci.maintainer@intel.com>  Thu, 08 Oct 2026 21:23:19 +0000
+
 ros-humble-adbscan-ros2 (2.3-3) UNRELEASED; urgency=low
 
   * Relocate the ROS 2 package into the unified src workspace.

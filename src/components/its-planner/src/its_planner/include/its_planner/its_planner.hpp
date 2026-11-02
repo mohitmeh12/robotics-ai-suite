@@ -107,7 +107,7 @@ private:
   // Converts a vector of pairs in Map coordinates to World coordinates
   vector<pair<double, double>> pathToWorldCoords(vector<pair<double, double>> & path);
 
-  // Scales a value in World scale to an equialent value in Map scale
+  // Scales a value from world scale to an equivalent value in map scale
   double worldToMapScale(double num);
 
   // Process the ITS Dubins path to optimize and smoothen it out, removing redundant path steps
@@ -125,18 +125,18 @@ private:
     const vector<vector<int>> inflation_map, const string & filename, PRM & road_map);
   vector<pair<double, double>> removeRedundantITSNodes(
     vector<std::array<double, 2>> & newPath, const vector<pair<double, double>> & originalPath,
-    const vector<int> & nodeIndeces, const vector<vector<int>> & costmap);
+    const vector<int> & nodeIndices, const vector<vector<int>> & costmap);
   bool isITSCollision(
     const vector<vector<int>> & costmap_2d, const MapLocation & p1, const MapLocation & p2,
     const double & step_size, vector<pair<double, double>> & checkedPath);
 
   void interpolateItsPathITS(
     vector<std::array<double, 2>> & newPath, vector<pair<double, double>> & oldPath,
-    const int & numSteps, vector<int> & nodeIndeces);
+    const int & numSteps, vector<int> & nodeIndices);
 
   vector<std::array<double, 2>> getIntermediateNodesITS(
     vector<pair<double, double>> & path, const double & pathStepSize, const double & nodeStepSize,
-    vector<int> & nodeIndeces);
+    vector<int> & nodeIndices);
 
   vector<pair<double, double>> processITSPath(
     vector<pair<double, double>> & originalPath, const vector<vector<int>> & costmap,

@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright (C) 2025 Intel Corporation
+// Copyright (C) 2026 Intel Corporation
 
 #include "dbscan_adaptiveK.h"
 
+#include <algorithm>
 #include <set>
 #include <string>
 #include <utility>
@@ -12,9 +13,8 @@
 #include <pcl/oneapi/kdtree/kdtree_flann.h>  // NOLINT
 #include <pcl/point_cloud.h>                 // NOLINT
 
-#include <CL/sycl.hpp>
-#include <chrono>
 #include <iostream>
+#include <pcl/oneapi/common/sycl_queue.h>
 #include <pcl/oneapi/octree/octree.hpp>
 #include <queue>
 #include <unordered_map>
@@ -77,22 +77,24 @@ void get_active_map_using_oneapi_search_octree(
     radiuses[i] = esp_array[i];
   }
 
-  pcl::oneapi::Octree::PointCloud cloud_device;
+  auto & queue = pcl::oneapi::getDefaultQueue();
+  pcl::oneapi::Octree::PointCloud cloud_device(cloud.size(), &queue);
   cloud_device.upload(cloud);
 
   // gpu build
   pcl::oneapi::Octree octree_device;
+  octree_device.setQueue(queue);
   octree_device.setCloud(cloud_device);
   octree_device.build();
 
   // upload queries
-  pcl::oneapi::Octree::Queries queries_device;
-  pcl::oneapi::Octree::Radiuses radiuses_device;
+  pcl::oneapi::Octree::Queries queries_device(cloud.size(), &queue);
+  pcl::oneapi::Octree::Radiuses radiuses_device(radiuses.size(), &queue);
   queries_device.upload(cloud);
   radiuses_device.upload(radiuses);
 
   // prepare output buffers on device
-  pcl::oneapi::NeighborIndices result_device(queries_device.size(), max_answers);
+  pcl::oneapi::NeighborIndices result_device(queries_device.size(), max_answers, &queue);
 
   octree_device.radiusSearch(queries_device, radiuses_device, max_answers, result_device);
 
@@ -605,22 +607,16 @@ void dbscan_adaptiveK(
   LiDAR_data_3D_t * x, FPDS_t * k_array, FPDS_t * esp_array, INT32_t * oclass, INT32_t * type,
   INT32_t num_points, std::string oneapi_library_name)
 {
-  UINT8_t touched[num_points];  // NOLINT
-  INT32_t active[num_points];   // NOLINT
+  vector<UINT8_t> touched(num_points);
+  vector<INT32_t> active(num_points);
   INT32_t active_count;
-  INT32_t active_count_at[num_points];  // NOLINT KDTree
-  INT32_t active1[num_points];          // NOLINT
-  INT32_t active1_count;
-  FPDS_t k, esp;
-  LiDAR_data_3D_t ob;
+  FPDS_t k;
   INT32_t length;
   INT32_t no = 1;
   INT32_t ind;
-  FPDS_t Dist, t0, t1, t2;
 
   // use KDTree to index the point cloud
-  auto start = std::chrono::high_resolution_clock::now();
-  vector<int> neighbors[num_points];  // list of neighbors for each point
+  vector<vector<int>> neighbors(num_points);  // list of neighbors for each point
 
   // #if defined(USE_ONEAPI_SEARCH_KDTREE)
   //   get_active_map_using_oneapi_search_kdtree(x, esp_array, neighbors, num_points);
@@ -631,34 +627,26 @@ void dbscan_adaptiveK(
   // #endif
 
   if (oneapi_library_name == "oneapi_kdtree") {
-    get_active_map_using_oneapi_search_kdtree(x, esp_array, neighbors, num_points);
+    get_active_map_using_oneapi_search_kdtree(x, esp_array, neighbors.data(), num_points);
   } else if (oneapi_library_name == "oneapi_octree") {
-    get_active_map_using_oneapi_search_octree(x, esp_array, neighbors, num_points);
+    get_active_map_using_oneapi_search_octree(x, esp_array, neighbors.data(), num_points);
   } else {
     if (oneapi_library_name != "pcl_kdtree") {
       std::cout << "Invalid parameter for oneapi_library: " << oneapi_library_name
                 << ", Supported options: oneapi_kdtree | oneapi_octree | pcl_kdtree" << std::endl;
       std::cout << "Using default option: pcl_kdtree (Standard PCL library)..." << std::endl;
     }
-    get_active_map(x, esp_array, neighbors, num_points);
+    get_active_map(x, esp_array, neighbors.data(), num_points);
   }
 
-  auto stop = std::chrono::high_resolution_clock::now();
-  auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
-  // cout << "run time in micro s:" << duration.count() << endl;
-
   // Group points into objects
-  memset(touched, 0, sizeof(UINT8_t) * num_points);
-
   for (int i = 0; i < num_points; i++) {
     if (touched[i] == 0) {
       k = k_array[i];
-      esp = esp_array[i];
-      // ob = x[i];
 
       std::queue<INT32_t> active_q;
 
-      memset(active, 0, sizeof(INT32_t) * num_points);
+      std::fill(active.begin(), active.end(), 0);
 
       // look up KDTree to find neighboring points
       active_count = neighbors[i].size();
@@ -745,7 +733,7 @@ void dbscan_adaptiveK(
  *---------------------------------------------------------------*/
 void dbscan_adaptiveK(
   LiDAR_data_3D_t * x, FPDS_t * k_array, FPDS_t * esp_array, INT32_t * oclass, INT32_t * type,
-  INT32_t num_points, std::string oneapi_library_name)
+  INT32_t num_points, std::string)
 {
   UINT8_t touched[num_points];  // NOLINT
   INT32_t active[num_points];   // NOLINT

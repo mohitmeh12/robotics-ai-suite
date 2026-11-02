@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # pylint: disable=duplicate-code
 # SPDX-License-Identifier: Apache-2.0
-# Copyright (C) 2025 Intel Corporation
+# Copyright (C) 2026 Intel Corporation
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -32,36 +32,37 @@ from sensor_msgs.msg import Image
 
 class TrajAndImgPublisher(Node):  # pylint: disable=too-many-instance-attributes
     """Publish guide-robot velocity commands and camera images on a timer."""
+
     # Time-based S-curve trajectory: (end_time, linear_x, angular_z)
     # Guide starts at (0.8, 0) facing +X, continuously moving with gentle curves.
     TRAJ_SEGMENTS = [
-        (6.0, 0.08,  0.00),    # straight
-        (10.0, 0.08,  0.10),   # gentle curve left  (~23 deg)
-        (16.0, 0.08,  0.00),   # straight
-        (20.0, 0.08, -0.10),   # gentle curve right (~23 deg)
-        (26.0, 0.08,  0.00),   # straight
-        (30.0, 0.08,  0.10),   # gentle curve left
-        (36.0, 0.08,  0.00),   # straight
-        (40.0, 0.06, -0.08),   # slow gentle right
-        (43.0, 0.04,  0.00),   # slow straight
-        (45.0, 0.00,  0.00),   # stop
+        (6.0, 0.08, 0.00),  # straight
+        (10.0, 0.08, 0.10),  # gentle curve left  (~23 deg)
+        (16.0, 0.08, 0.00),  # straight
+        (20.0, 0.08, -0.10),  # gentle curve right (~23 deg)
+        (26.0, 0.08, 0.00),  # straight
+        (30.0, 0.08, 0.10),  # gentle curve left
+        (36.0, 0.08, 0.00),  # straight
+        (40.0, 0.06, -0.08),  # slow gentle right
+        (43.0, 0.04, 0.00),  # slow straight
+        (45.0, 0.00, 0.00),  # stop
     ]
 
     def __init__(self):
         """Initialize the trajectory and image publisher node."""
-        super().__init__('traj_and_img_publisher_node')
+        super().__init__("traj_and_img_publisher_node")
         # declare parameters
-        self.declare_parameter('odom_topic', '/odom')
-        self.declare_parameter('twist_topic', '/cmd_vel')
-        self.declare_parameter('publish_frequency', 10)
-        self.declare_parameter('Camera_topic', '/sim_camera')
-        self.odom_topic_name_ = self.get_parameter('odom_topic').value
-        self.twist_topic_name_ = self.get_parameter('twist_topic').value
-        self.publish_period_ = 1.0 / self.get_parameter('publish_frequency').value
-        self.camera_topic_name_ = self.get_parameter('Camera_topic').value
+        self.declare_parameter("odom_topic", "/odom")
+        self.declare_parameter("twist_topic", "/cmd_vel")
+        self.declare_parameter("publish_frequency", 10)
+        self.declare_parameter("Camera_topic", "/sim_camera")
+        self.odom_topic_name_ = self.get_parameter("odom_topic").value
+        self.twist_topic_name_ = self.get_parameter("twist_topic").value
+        self.publish_period_ = 1.0 / self.get_parameter("publish_frequency").value
+        self.camera_topic_name_ = self.get_parameter("Camera_topic").value
 
         self.image_dir_ = os.path.join(
-            get_package_share_directory('gesture_recognition_pkg'), 'config', 'gesture_imgs'
+            get_package_share_directory("gesture_recognition_pkg"), "config", "gesture_imgs"
         )
 
         self.odom_subscriber_ = self.create_subscription(
@@ -74,13 +75,13 @@ class TrajAndImgPublisher(Node):  # pylint: disable=too-many-instance-attributes
         self.rpy_ = (0.0, 0.0, 0.0)
         self.start_time_ = None
         self.startup_delay_ = 10.0  # Wait for Gazebo to stabilize
-        self.get_logger().info('trajectory_publisher_node has been started')
+        self.get_logger().info("trajectory_publisher_node has been started")
 
     def odom_topic_callback(self, odom_msg):
         """Store pose from odometry messages."""
         if self.start_time_ is None:
             self.start_time_ = self.get_clock().now()
-            self.get_logger().info('First odom received — starting startup delay')
+            self.get_logger().info("First odom received — starting startup delay")
         self.rpy_ = self.euler_from_quaternion(
             odom_msg.pose.pose.orientation.x,
             odom_msg.pose.pose.orientation.y,
@@ -99,10 +100,10 @@ class TrajAndImgPublisher(Node):  # pylint: disable=too-many-instance-attributes
 
         # Wait until first odom message is received (Gazebo is ready)
         if self.start_time_ is None:
-            image_file_name = os.path.join(self.image_dir_, 'back_no_action.jpg')
+            image_file_name = os.path.join(self.image_dir_, "back_no_action.jpg")
             bridge = CvBridge()
             cv_image = cv2.imread(image_file_name)
-            image_message = bridge.cv2_to_imgmsg(cv_image, encoding='passthrough')
+            image_message = bridge.cv2_to_imgmsg(cv_image, encoding="passthrough")
             self.image_publisher_.publish(image_message)
             self.trajectory_publisher_.publish(twist_msg)
             return
@@ -111,14 +112,14 @@ class TrajAndImgPublisher(Node):  # pylint: disable=too-many-instance-attributes
 
         # Startup delay — wait for Gazebo to stabilize
         if elapsed < self.startup_delay_:
-            image_file_name = os.path.join(self.image_dir_, 'back_no_action.jpg')
+            image_file_name = os.path.join(self.image_dir_, "back_no_action.jpg")
             bridge = CvBridge()
             cv_image = cv2.imread(image_file_name)
-            image_message = bridge.cv2_to_imgmsg(cv_image, encoding='passthrough')
+            image_message = bridge.cv2_to_imgmsg(cv_image, encoding="passthrough")
             self.image_publisher_.publish(image_message)
             self.trajectory_publisher_.publish(twist_msg)
             self.get_logger().info(
-                f'Startup delay: {elapsed:.1f}/{self.startup_delay_:.1f}s',
+                f"Startup delay: {elapsed:.1f}/{self.startup_delay_:.1f}s",
                 throttle_duration_sec=2.0,
             )
             return
@@ -142,13 +143,13 @@ class TrajAndImgPublisher(Node):  # pylint: disable=too-many-instance-attributes
 
         # Show Thumb_Up whenever guide is actively moving (aligns with audio "start" timing)
         if moving:
-            image_file_name = os.path.join(self.image_dir_, 'back_thumbs_up.jpg')
+            image_file_name = os.path.join(self.image_dir_, "back_thumbs_up.jpg")
         else:
-            image_file_name = os.path.join(self.image_dir_, 'back_thumbs_down.jpg')
+            image_file_name = os.path.join(self.image_dir_, "back_thumbs_down.jpg")
 
         bridge = CvBridge()
         cv_image = cv2.imread(image_file_name)
-        image_message = bridge.cv2_to_imgmsg(cv_image, encoding='passthrough')
+        image_message = bridge.cv2_to_imgmsg(cv_image, encoding="passthrough")
         self.image_publisher_.publish(image_message)
         self.trajectory_publisher_.publish(twist_msg)
 
@@ -183,5 +184,5 @@ def main(args=None):
     rclpy.shutdown()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

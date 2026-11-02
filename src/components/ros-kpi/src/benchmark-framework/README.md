@@ -429,6 +429,8 @@ ssh -o BatchMode=yes remote_user@remote_ip 'echo "Connected"'
 python3 src/monitor_resources.py --remote-ip REMOTE_IP --remote-user USER --list
 ```
 
+For detailed test results and troubleshooting, see [REMOTE_MONITORING_TEST_REPORT.md](REMOTE_MONITORING_TEST_REPORT.md).
+
 **Note:** Resource monitoring works immediately if SSH is configured. Graph monitoring requires ROS2 installed locally.
 
 ---

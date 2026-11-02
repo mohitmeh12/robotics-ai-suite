@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # pylint: disable=duplicate-code
 # SPDX-License-Identifier: Apache-2.0
-# Copyright (C) 2025 Intel Corporation
+# Copyright (C) 2026 Intel Corporation
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -39,37 +39,38 @@ from std_msgs.msg import Bool
 
 class TextToSpeech(Node):  # pylint: disable=too-many-instance-attributes
     """ROS 2 node that converts detected commands to audible speech."""
+
     def __init__(self):  # pylint: disable=too-many-statements
         """Initialise TTS models, parameters, and ROS pub/sub."""
-        super().__init__('text_to_speech_node')
+        super().__init__("text_to_speech_node")
 
         # declare parameters
-        self.declare_parameter('tbot_odom_topic_name', '/tb3/odom')
-        self.declare_parameter('gbot_odom_topic_name', '/guide_robot/odom')
-        self.declare_parameter('audio_command_topic_name', 'audio_command')
-        self.declare_parameter('gesture_topic_name', 'gesture')
-        self.declare_parameter('motor_state_topic_name', 'motor_state')
-        self.declare_parameter('target_loc_topic_name', 'target_loc')
-        self.declare_parameter('audio_play_frequency', 2)
-        self.declare_parameter('distance_calculation_frequency', 2)
-        self.declare_parameter('declare_target_loc', True)
-        self.declare_parameter('device_name', 'CPU')
-        self.tbot_odom_topic_name_ = self.get_parameter('tbot_odom_topic_name').value
-        self.gbot_odom_topic_name_ = self.get_parameter('gbot_odom_topic_name').value
-        self.audio_command_topic_name_ = self.get_parameter('audio_command_topic_name').value
-        self.gesture_topic_name_ = self.get_parameter('gesture_topic_name').value
-        self.motor_state_topic_name_ = self.get_parameter('motor_state_topic_name').value
-        self.target_loc_topic_name_ = self.get_parameter('target_loc_topic_name').value
-        self.audio_play_period_ = 1.0 / self.get_parameter('audio_play_frequency').value
+        self.declare_parameter("tbot_odom_topic_name", "/tb3/odom")
+        self.declare_parameter("gbot_odom_topic_name", "/guide_robot/odom")
+        self.declare_parameter("audio_command_topic_name", "audio_command")
+        self.declare_parameter("gesture_topic_name", "gesture")
+        self.declare_parameter("motor_state_topic_name", "motor_state")
+        self.declare_parameter("target_loc_topic_name", "target_loc")
+        self.declare_parameter("audio_play_frequency", 2)
+        self.declare_parameter("distance_calculation_frequency", 2)
+        self.declare_parameter("declare_target_loc", True)
+        self.declare_parameter("device_name", "CPU")
+        self.tbot_odom_topic_name_ = self.get_parameter("tbot_odom_topic_name").value
+        self.gbot_odom_topic_name_ = self.get_parameter("gbot_odom_topic_name").value
+        self.audio_command_topic_name_ = self.get_parameter("audio_command_topic_name").value
+        self.gesture_topic_name_ = self.get_parameter("gesture_topic_name").value
+        self.motor_state_topic_name_ = self.get_parameter("motor_state_topic_name").value
+        self.target_loc_topic_name_ = self.get_parameter("target_loc_topic_name").value
+        self.audio_play_period_ = 1.0 / self.get_parameter("audio_play_frequency").value
         self.distance_calcualtion_period_ = (
-            1.0 / self.get_parameter('distance_calculation_frequency').value
+            1.0 / self.get_parameter("distance_calculation_frequency").value
         )
-        self.declare_target_loc_ = self.get_parameter('declare_target_loc').value
-        self.device_name_ = self.get_parameter('device_name').value
+        self.declare_target_loc_ = self.get_parameter("declare_target_loc").value
+        self.device_name_ = self.get_parameter("device_name").value
         self.device_name_ = self.device_name_.upper()
-        if self.device_name_ not in ['CPU', 'GPU', 'NPU']:
-            self.device_name_ = 'CPU'
-        self.get_logger().info(f'using device: {self.device_name_}')
+        if self.device_name_ not in ["CPU", "GPU", "NPU"]:
+            self.device_name_ = "CPU"
+        self.get_logger().info(f"using device: {self.device_name_}")
         # audio and gesture subscriber
         self.audio_subscriber_ = self.create_subscription(
             AudioCommand, self.audio_command_topic_name_, self.audio_topic_callback, 10
@@ -98,25 +99,25 @@ class TextToSpeech(Node):  # pylint: disable=too-many-instance-attributes
         )
         # Loading melGAN model
         self.melgan_model_file_ = os.path.join(
-            get_package_share_directory('text_to_speech_pkg'),
-            'config',
-            'model_files',
-            'text-to-speech-en-0001-generation.xml',
+            get_package_share_directory("text_to_speech_pkg"),
+            "config",
+            "model_files",
+            "text-to-speech-en-0001-generation.xml",
         )
         core = ov.Core()
         self.vocoder = MelGANIE(self.melgan_model_file_, core, device=self.device_name_)
         # Loading model parameter files
         self.model_duration_file_ = os.path.join(
-            get_package_share_directory('text_to_speech_pkg'),
-            'config',
-            'model_files',
-            'text-to-speech-en-0001-duration-prediction.xml',
+            get_package_share_directory("text_to_speech_pkg"),
+            "config",
+            "model_files",
+            "text-to-speech-en-0001-duration-prediction.xml",
         )
         self.model_forward_file_ = os.path.join(
-            get_package_share_directory('text_to_speech_pkg'),
-            'config',
-            'model_files',
-            'text-to-speech-en-0001-regression.xml',
+            get_package_share_directory("text_to_speech_pkg"),
+            "config",
+            "model_files",
+            "text-to-speech-en-0001-regression.xml",
         )
         self.forward_tacotron = ForwardTacotronIE(
             self.model_duration_file_,
@@ -132,19 +133,19 @@ class TextToSpeech(Node):  # pylint: disable=too-many-instance-attributes
         self.gbot_pos_ = [np.inf, 0.0, 0.0]
         self.distance = np.inf  # distance between gbot and tbot
         self.target_distance = np.inf
-        self.audio_command = ''
-        self.gesture_command = ''
+        self.audio_command = ""
+        self.gesture_command = ""
         self.motor_initiated = False
         self.played_audio_command = False
         self.played_gesture_command = False
         self.played_distance_info = False
-        self.get_logger().info('text_to_speech_node has been started')
+        self.get_logger().info("text_to_speech_node has been started")
 
     def save_wavefile(self, x, path):
         """Write raw PCM samples *x* to a WAV file at *path*."""
         sr = 22050
         # pylint: disable=no-member
-        with wave.open(path, 'w') as f:
+        with wave.open(path, "w") as f:
             f.setnchannels(1)
             f.setsampwidth(2)
             f.setframerate(sr)
@@ -188,23 +189,23 @@ class TextToSpeech(Node):  # pylint: disable=too-many-instance-attributes
 
     def audio_topic_callback(self, msg):
         """Latch the incoming audio command."""
-        if msg.audio_command != 'no_action':
+        if msg.audio_command != "no_action":
             self.audio_command = msg.audio_command
         else:
-            self.audio_command = ''
+            self.audio_command = ""
             self.played_audio_command = False
 
     def gesture_topic_callback(self, msg):
         """Latch the incoming gesture command."""
-        if msg.gesture_category != 'No_Action':
-            if msg.gesture_category == 'Thumb_Down':
-                self.gesture_command = 'thumbs down'
-            elif msg.gesture_category == 'Thumb_Up':
-                self.gesture_command = 'thumbs up'
+        if msg.gesture_category != "No_Action":
+            if msg.gesture_category == "Thumb_Down":
+                self.gesture_command = "thumbs down"
+            elif msg.gesture_category == "Thumb_Up":
+                self.gesture_command = "thumbs up"
             else:
-                self.gesture_command = ' '.join(msg.gesture_category.split('_')).lower()
+                self.gesture_command = " ".join(msg.gesture_category.split("_")).lower()
         else:
-            self.gesture_command = ''
+            self.gesture_command = ""
             self.played_gesture_command = False
 
     def play_audio(self):  # pylint: disable=too-many-locals
@@ -212,25 +213,25 @@ class TextToSpeech(Node):  # pylint: disable=too-many-instance-attributes
         audio_res = np.array([], dtype=np.int16)
         len_th = 512
         lines = []
-        if self.audio_command != '' and not self.played_audio_command:
-            lines.append('Detected audio command: ' + self.audio_command)
+        if self.audio_command != "" and not self.played_audio_command:
+            lines.append("Detected audio command: " + self.audio_command)
             self.played_audio_command = True
-        if self.gesture_command != '' and not self.played_gesture_command:
-            lines.append('Detected gesture: ' + self.gesture_command)
+        if self.gesture_command != "" and not self.played_gesture_command:
+            lines.append("Detected gesture: " + self.gesture_command)
             self.played_gesture_command = True
         if self.declare_target_loc_ and self.motor_initiated and not self.played_distance_info:
-            lines.append('Target located at ' + str(np.round(self.target_distance, 2)) + ' meters')
+            lines.append("Target located at " + str(np.round(self.target_distance, 2)) + " meters")
             self.played_distance_info = True
 
         if len(lines) != 0:
             for i, line in enumerate(lines):
                 line = line.rstrip()
-                print(f'\nProcess line {i} with length {len(line)}.')
+                print(f"\nProcess line {i} with length {len(line)}.")
                 print(line)
                 if len(line) > len_th:
                     texts = []
                     prev_begin = 0
-                    delimiters = '.!?;:'
+                    delimiters = ".!?;:"
                     for i, c in enumerate(line):
                         if (c in delimiters and i - prev_begin > len_th) or i == len(line) - 1:
                             texts.append(line[prev_begin: i + 1])  # fmt: skip
@@ -258,5 +259,5 @@ def main(args=None):
     rclpy.shutdown()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

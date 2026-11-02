@@ -10,7 +10,7 @@ ADBSCAN (Adaptive Density-Based Spatial Clustering of Applications with Noise) i
 
 Unlike traditional DBSCAN—which relies on static neighborhood search radii ($\epsilon$) and fixed density thresholds ($MinPts$)—ADBSCAN dynamically scales these parameters based on range from the sensor and the field-of-view point distribution. This compensates for optical beam divergence and spatial point cloud sparsity at extended distances, yielding a 20–30% increase in effective object detection range.
 
-The Follow-Me reference application builds on ADBSCAN to continuously track a target human or guide vehicle, evaluate multi-modal interaction cues (hand gestures and voice commands via Intel® OpenVINO™), and command mobile base velocities.
+The Follow-Me reference application builds on ADBSCAN to continuously track a target human or guide vehicle and command mobile base velocities. Gesture and speech adapters are deferred; a `std_msgs/Bool` activation topic is available for future integrations.
 
 ## Architecture & Algorithm
 
@@ -26,88 +26,51 @@ ADBSCAN formulates adaptive clustering parameters:
 
 ### System Architecture
 
-The following diagram illustrates the data flow from physical or simulated sensors through perception, interaction, and mobile base control:
+The following diagram shows the live sensor-to-follower flow:
 
 ```mermaid
 graph TD
-    subgraph Sensors["Sensors & Modalities"]
-        Lidar["2D / 3D LiDAR<br/>(LaserScan / PointCloud2)"]
-        Depth["Intel RealSense Depth Camera<br/>(PointCloud2)"]
-        RGB["RGB Camera Stream"]
-        Mic["Microphone Audio"]
-    end
-
-    subgraph Perception["Perception Layer"]
-        ADBSCAN["adbscan_ros2 Node<br/>• Range-Adaptive Radius ε(r)<br/>• Density Scaling MinPts(r)<br/>• Optional oneAPI GPU Offload"]
-    end
-
-    subgraph Interaction["Interaction Layer (OpenVINO)"]
-        Gesture["gesture_recognition_pkg<br/>(MediaPipe / OpenVINO)"]
-        Speech["speech_recognition_pkg<br/>(OpenVINO Speech ASR)"]
-        TTS["text_to_speech_pkg<br/>(Synthesized Audio Prompts)"]
-    end
-
-    subgraph Interconnect["ROS 2 Topics & Interfaces"]
-        Obs["/obstacle_array<br/>(nav2_dynamic_msgs/ObstacleArray)"]
-        FMI["follow_me_interfaces<br/>(Gesture / Audio Signals)"]
-    end
-
-    subgraph Application["Application Layer"]
-        FollowMe["adbscan_ros2_follow_me Node<br/>• Target Cluster Tracking<br/>• Multi-Modal State Machine<br/>• Twist Velocity Generator"]
-    end
-
-    subgraph Execution["Actuation & Simulation Targets"]
-        CmdVel["/cmd_vel<br/>(geometry_msgs/Twist)"]
-        Gazebo["Gazebo Simulation<br/>(TurtleBot3 Waffle + Guide Robot)"]
-        Robot["Physical AMR<br/>(Differential Drive Base)"]
-    end
-
-    Lidar --> ADBSCAN
-    Depth --> ADBSCAN
-    RGB --> Gesture
-    Mic --> Speech
-
-    ADBSCAN --> Obs
-    Obs --> FollowMe
-
-    Gesture --> FMI
-    Speech --> FMI
-    FMI --> FollowMe
-
-    FollowMe -. Voice Feedback .-> TTS
-    FollowMe --> CmdVel
-    CmdVel --> Gazebo
-    CmdVel --> Robot
+  Sensor["LiDAR scan or depth cloud"] --> Follower["adbscan_sub: clustering, target tracking, motion"]
+  Activation["/follow_enabled: optional Bool activation"] --> Follower
+  Follower --> Command["/cmd_vel: Twist"]
+  Command --> Robot["TurtleBot3 or physical robot"]
+  Wander["Bounded randomized guide motion"] --> Guide["Gazebo guide robot"]
+  Guide --> Sensor
 ```
 
 ## Source Code & Workspace
 
 The component packages are consolidated under the `src/` directory:
 
+- `adbscan_core`: Dependency-light, standalone C++ ADBSCAN clustering library (`cluster` and `cluster_frame`) with pluggable neighbor search backends.
 - `adbscan_ros2`: Core ADBSCAN clustering perception node publishing `/obstacle_array`.
-- `adbscan_ros2_follow_me`: Follow-me tracker, state machine, and velocity generator.
-- `follow_me_interfaces`: Custom ROS 2 message and service definitions.
-- `gesture_recognition_pkg`: Hand gesture recognition using OpenVINO / MediaPipe.
-- `speech_recognition_pkg`: Voice command recognition using OpenVINO ASR models.
-- `text_to_speech_pkg`: Audio prompt generation and feedback.
+- `adbscan_ros2_follow_me`: Self-contained follow-me tracker and velocity generator.
 - `followme_turtlebot3_gazebo`: Gazebo simulation environments (Harmonic / Fortress).
+- `follow_me_interfaces`, `gesture_recognition_pkg`, `speech_recognition_pkg`, and `text_to_speech_pkg`: Experimental interaction packages, not required by the follower.
 
 ## Intel®-Optimized ADBSCAN
 
-In this version of ADBSCAN, the algorithm has been optimized for Intel® SOC by
-replacing linear neighbor point search with an optimized oneAPI PCL library
-(offloaded to GPU), as well as refactoring the clustering algorithm. This
-tutorial describes how to run this Intel-optimized ADBSCAN algorithm and compare
-the execution time with the unoptimized version.
+In this version of ADBSCAN, the algorithm has been optimized for Intel®
+architectures by replacing linear neighbor point search with optimized
+KD-tree and octree neighbor search using the Intel® oneAPI™ SYCL toolkit,
+as well as refactoring the clustering algorithm into the reusable `adbscan_core`
+library. It has been tested and validated across Intel® Core™ Ultra and
+11th–14th Generation Intel® Core™ processors with integrated Intel® Iris® X^e^
+and Intel® Arc™ graphics. This tutorial describes how to build or package
+the Intel-optimized ADBSCAN algorithm, select backends at runtime, and compare
+execution times against the CPU baseline.
 
 ### ADBSCAN Optimization Setup
 
-The Intel-optimized and unoptimized versions of the algorithm are distributed
-as `ros-jazzy-adbscan-oneapi` and `ros-jazzy-adbscan-ros2`, respectively.
-We demonstrate the gain in latency for a ROS 2 bag file with point cloud data
-from a RealSense camera. The amount of gain is prominent when the input
-is dense or the number of input points is large. In case of a 2D LIDAR,
-the point cloud is comparatively sparse and hence, not showed here.
+Hardware acceleration is provided directly through `adbscan_core` when built
+with the `WITH_ONEAPI=ON` option. When enabled, a single installation supports
+both standard CPU clustering (`legacy_cpu`) and accelerated oneAPI backends
+(`oneapi_kdtree`, `oneapi_octree`, `pcl_kdtree`) selectable at runtime via the
+`core_backend` parameter. We demonstrate the gain in latency for a ROS 2 bag
+file with point cloud data from a RealSense camera. The amount of gain is
+prominent when the input is dense or the number of input points is large.
+In case of a 2D LIDAR, the point cloud is comparatively sparse and hence,
+not showed here.
 
 ### ADBSCAN Optimization Prerequisites
 
@@ -169,33 +132,27 @@ cloud data to respective topics. You will view the following screen output:
 include `/scan` (point cloud from 2D LIDAR) and `/camera/depth/color/points`
 (point cloud from RealSense camera).
 
-### Install and run optimized Deb package
+### Build or Install oneAPI-Enabled Packages
 
-Install `ros-jazzy-adbscan-oneapi` Deb package from Intel® Autonomous Mobile
-Robot APT repository:
-
-::::{tab-set}
-:::{tab-item} **Jazzy**
-:sync: jazzy
+To build locally with oneAPI support:
 
 ```bash
-sudo apt update
-sudo apt install ros-jazzy-adbscan-oneapi
+source /opt/ros/<distro>/setup.bash
+colcon build --packages-select adbscan_core adbscan_ros2 \
+  --cmake-args -DWITH_ONEAPI=ON -DCMAKE_CXX_COMPILER=icpx
 ```
 
-:::
-:::{tab-item}  **Humble**
-:sync: humble
+To build and install Debian packages with oneAPI support:
 
 ```bash
+CXX=icpx make package ROS_DISTRO=<distro> WITH_ONEAPI=ON
 sudo apt update
-sudo apt install ros-humble-adbscan-oneapi
+sudo apt install ./build/debian-packages/packages/*.deb
 ```
 
-:::
-::::
+### Run Intel-Optimized ADBSCAN on GPU
 
-Run the following command in a terminal:
+Run the node with the `oneapi_kdtree` backend offloaded to GPU:
 
 ::::{tab-set}
 :::{tab-item} **Jazzy**
@@ -203,7 +160,9 @@ Run the following command in a terminal:
 
 ```bash
 source /opt/ros/jazzy/setup.bash
-ros2 run adbscan_ros2 adbscan_sub --ros-args --params-file /opt/ros/jazzy/share/adbscan_ros2/config/adbscan_sub_RS.yaml
+ONEAPI_DEVICE_SELECTOR=level_zero:gpu ros2 run adbscan_ros2 adbscan_sub --ros-args \
+  --params-file /opt/ros/jazzy/share/adbscan_ros2/config/adbscan_sub_RS.yaml \
+  -p core_backend:=oneapi_kdtree
 ```
 
 :::
@@ -212,7 +171,9 @@ ros2 run adbscan_ros2 adbscan_sub --ros-args --params-file /opt/ros/jazzy/share/
 
 ```bash
 source /opt/ros/humble/setup.bash
-ros2 run adbscan_ros2 adbscan_sub --ros-args --params-file /opt/ros/humble/share/adbscan_ros2/config/adbscan_sub_RS.yaml
+ONEAPI_DEVICE_SELECTOR=level_zero:gpu ros2 run adbscan_ros2 adbscan_sub --ros-args \
+  --params-file /opt/ros/humble/share/adbscan_ros2/config/adbscan_sub_RS.yaml \
+  -p core_backend:=oneapi_kdtree
 ```
 
 :::
@@ -226,33 +187,9 @@ The table shows a breakdown between pre-processing, ADBSCAN execution and
 post-processing time. The caption at the bottom of the table will print
 which PCL library is being used.
 
-### Install and run standard (unoptimized) Deb package
+### Run Standard (CPU Baseline) Execution
 
-Install `ros-jazzy-adbscan-ros2` Deb package from Intel® Autonomous Mobile
-Robot APT repository
-
-::::{tab-set}
-:::{tab-item} **Jazzy**
-:sync: jazzy
-
-```bash
-sudo apt update
-sudo apt install ros-jazzy-adbscan-ros2
-```
-
-:::
-:::{tab-item}  **Humble**
-:sync: humble
-
-```bash
-sudo apt update
-sudo apt install ros-humble-adbscan-ros2
-```
-
-:::
-::::
-
-Run the following command in a terminal
+Run the node with the CPU baseline backend (`legacy_cpu`):
 
 ::::{tab-set}
 :::{tab-item} **Jazzy**
@@ -260,7 +197,9 @@ Run the following command in a terminal
 
 ```bash
 source /opt/ros/jazzy/setup.bash
-ros2 run adbscan_ros2 adbscan_sub --ros-args --params-file /opt/ros/jazzy/share/adbscan_ros2/config/adbscan_sub_RS.yaml
+ros2 run adbscan_ros2 adbscan_sub --ros-args \
+  --params-file /opt/ros/jazzy/share/adbscan_ros2/config/adbscan_sub_RS.yaml \
+  -p core_backend:=legacy_cpu
 ```
 
 :::
@@ -269,7 +208,9 @@ ros2 run adbscan_ros2 adbscan_sub --ros-args --params-file /opt/ros/jazzy/share/
 
 ```bash
 source /opt/ros/humble/setup.bash
-ros2 run adbscan_ros2 adbscan_sub --ros-args --params-file /opt/ros/humble/share/adbscan_ros2/config/adbscan_sub_RS.yaml
+ros2 run adbscan_ros2 adbscan_sub --ros-args \
+  --params-file /opt/ros/humble/share/adbscan_ros2/config/adbscan_sub_RS.yaml \
+  -p core_backend:=legacy_cpu
 ```
 
 :::
@@ -284,12 +225,13 @@ version compared to the standard one. The pre-processing and post-processing tim
 should be more or less of the same range in both versions, since the input bag
 file is identical. The amount of gain in execution time will depend on the
 system configuration, the size of the point cloud data in the input frames etc.
+See [ADBSCAN Behavior Baseline](adbscan-behavior-baseline.md) for full benchmark
+metrics across CPU and GPU devices.
 
 ### Re-configurable parameters
 
-The optimized ADBSCAN has a user-defined parameter called `oneapi_library` to
-choose from a set of PCL libraries: `oneapi_kdtree`, `oneapi_octree`,
-`pcl_kdtree`. The default value is `oneapi_kdtree`.
+The clustering backend is configured via `core_backend` (`legacy_cpu`,
+`pcl_kdtree`, `oneapi_kdtree`, `oneapi_octree`).
 Moreover, one can run both optimized and unoptimized packages with a parameter
 called `benchmark_number_of_frames`. It will take an integer (greater or equal
 to 1) as input and the benchmarking table will produce the average execution
@@ -297,7 +239,7 @@ time of `benchmark_number_of_frames` frames, instead of a single frame
 (default value).
 
 For example, you can use the following command to run the optimized ADBSCAN
-with `oneapi_octree` library and display the benchmarking data for
+with `oneapi_octree` backend on GPU and display the benchmarking data for
 an average of 5 frames:
 
 ::::{tab-set}
@@ -305,7 +247,9 @@ an average of 5 frames:
 :sync: jazzy
 
 ```bash
-ros2 run adbscan_ros2 adbscan_sub --ros-args --params-file /opt/ros/jazzy/share/adbscan_ros2/config/adbscan_sub_RS.yaml  -p benchmark_number_of_frames:=5 -p oneapi_library:=oneapi_octree
+ONEAPI_DEVICE_SELECTOR=level_zero:gpu ros2 run adbscan_ros2 adbscan_sub --ros-args \
+  --params-file /opt/ros/jazzy/share/adbscan_ros2/config/adbscan_sub_RS.yaml \
+  -p benchmark_number_of_frames:=5 -p core_backend:=oneapi_octree
 ```
 
 :::
@@ -313,13 +257,24 @@ ros2 run adbscan_ros2 adbscan_sub --ros-args --params-file /opt/ros/jazzy/share/
 :sync: humble
 
 ```bash
-ros2 run adbscan_ros2 adbscan_sub --ros-args --params-file /opt/ros/humble/share/adbscan_ros2/config/adbscan_sub_RS.yaml  -p benchmark_number_of_frames:=5 -p oneapi_library:=oneapi_octree
+ONEAPI_DEVICE_SELECTOR=level_zero:gpu ros2 run adbscan_ros2 adbscan_sub --ros-args \
+  --params-file /opt/ros/humble/share/adbscan_ros2/config/adbscan_sub_RS.yaml \
+  -p benchmark_number_of_frames:=5 -p core_backend:=oneapi_octree
 ```
 
 :::
 ::::
 
 A complete list of the reconfigurable parameters is given below:
+
+- `use_adbscan_core`
+
+  Routes clustering through the shared `adbscan_core` library (default: `true`).
+
+- `core_backend`
+
+  Available options: `legacy_cpu`, `pcl_kdtree`, `oneapi_kdtree`, `oneapi_octree`.
+  Accelerated backends require `WITH_ONEAPI=ON`.
 
 - `Lidar_type`
 
@@ -369,11 +324,7 @@ A complete list of the reconfigurable parameters is given below:
 
 - `oneapi_library`
 
-  Available options are: `oneapi_kdtree`, `oneapi_octree`, `pcl_kdtree`.
-  `oneapi_kdtree` and `oneapi_octree` allow the algorithm to use optimized
-  oneAPI™ KdTree or octree library and offload the neighbor point search method
-  to GPU. `pcl_kdtree` option uses the standard PCL KdTree library,
-  not optimized for Intel® SOC.
+  Legacy parameter used when `use_adbscan_core:=false`.
 
 - `benchmark_number_of_frames`
 
@@ -400,18 +351,12 @@ A complete list of the reconfigurable parameters is given below:
     according to your environment.
 
 - IA-optimized ADBSCAN offloads the neighbor search to GPUs when using
-  `oneapi_kdtree` and `oneapi_octree` library.
+  `oneapi_kdtree` and `oneapi_octree` backend.
 
-  Please make sure that your system is equipped with working gpu, if using
-  these libraries. You can use `lspci` command in a Linux terminal to
-  view GPU info.
-
-- `ros-jazzy-adbscan-ros2` and `ros-jazzy-adbscan-oneapi` are mutually
-  exclusive Deb packages.
-
-  Please refrain from installing them simultaneously
-  like this `apt install ros-jazzy-adbscan-ros2 ros-jazzy-adbscan-oneapi`.
-  Always install the packages sequentially, as showed in this document.
+  Please make sure that your system is equipped with working GPU and Level Zero
+  runtime if using these backends. Set `ONEAPI_DEVICE_SELECTOR=level_zero:gpu`
+  (or `opencl:cpu` for SYCL CPU). You can use `lspci` and `sycl-ls` in a Linux
+  terminal to view GPU and SYCL device info.
 
 - You may experience lower performance if the Linux kernel schedules the `adbscan_ros2`
 process to an efficient-core (E-core). To achieve better performance, you can
@@ -425,7 +370,9 @@ a performance-core (P-core).
 
   ```bash
   source /opt/ros/jazzy/setup.bash
-  taskset -c 0 ros2 run adbscan_ros2 adbscan_sub --ros-args --params-file /opt/ros/jazzy/share/adbscan_ros2/config/adbscan_sub_RS.yaml
+  taskset -c 0 ros2 run adbscan_ros2 adbscan_sub --ros-args \
+    --params-file /opt/ros/jazzy/share/adbscan_ros2/config/adbscan_sub_RS.yaml \
+    -p core_backend:=oneapi_kdtree
   ```
 
   :::
@@ -434,7 +381,9 @@ a performance-core (P-core).
 
   ```bash
   source /opt/ros/humble/setup.bash
-  taskset -c 0 ros2 run adbscan_ros2 adbscan_sub --ros-args --params-file /opt/ros/humble/share/adbscan_ros2/config/adbscan_sub_RS.yaml
+  taskset -c 0 ros2 run adbscan_ros2 adbscan_sub --ros-args \
+    --params-file /opt/ros/humble/share/adbscan_ros2/config/adbscan_sub_RS.yaml \
+    -p core_backend:=oneapi_kdtree
   ```
 
   :::
@@ -442,9 +391,9 @@ a performance-core (P-core).
 
 ## Simulate Follow-me in Gazebo
 
-This demo of the Follow-me algorithm shows an Autonomous Mobile Robot application
-for following a target person where the movement of the robot can be controlled
-by the person's location, hand gestures, and voice commands.
+This simulation follows a moving guide robot using LiDAR or depth data. Gesture
+and speech integrations are deferred; the follower tracks by default and
+accepts optional activation on `/follow_enabled` (`std_msgs/msg/Bool`).
 This tutorial describes how to launch the demo in `Gazebo` simulator (Gazebo Harmonic on ROS 2 Jazzy, Gazebo Fortress on ROS 2 Humble).
 
 ### Simulation Setup
@@ -481,61 +430,19 @@ sudo apt install ros-humble-followme-turtlebot3-gazebo
 :::
 ::::
 
-#### Activate Python Virtual Environment
-
-```bash
-sudo apt install python3-venv
-python3 -m venv venv_followme
-cd venv_followme
-source bin/activate
-```
-
-#### Install Python Modules
-
-This application uses
-[Mediapipe Hands Framework](https://mediapipe.readthedocs.io/en/latest/solutions/hands.html)
-for hand gesture recognition and Intel® OpenVINO™ for speech recognition. Install the following modules:
-
-::::{tab-set}
-:::{tab-item} **Jazzy**
-:sync: jazzy
-
-```bash
-pip3 install --upgrade pip
-pip3 install pyyaml
-# Gesture only:
-pip3 install -r /opt/ros/jazzy/share/followme_turtlebot3_gazebo/scripts/requirements_jazzy.txt
-# Optional audio / speech recognition:
-pip3 install -r /opt/ros/jazzy/share/followme_turtlebot3_gazebo/scripts/requirements_audio_jazzy.txt
-```
-
-:::
-:::{tab-item}  **Humble**
-:sync: humble
-
-```bash
-pip3 install --upgrade pip
-pip3 install pyyaml
-# Gesture only:
-pip3 install -r /opt/ros/humble/share/followme_turtlebot3_gazebo/scripts/requirements_humble.txt
-# Optional audio / speech recognition:
-pip3 install -r /opt/ros/humble/share/followme_turtlebot3_gazebo/scripts/requirements_audio_humble.txt
-```
-
-:::
-::::
+The follower does not require a Python virtual environment or optional
+gesture/audio Python packages.
 
 ### Run Demo with 2D Lidar
 
-Run the following script to launch `Gazebo` simulator and ROS 2 rviz2.
+Launch the complete Gazebo simulation with 2D LiDAR:
 
 ::::{tab-set}
 :::{tab-item} **Jazzy**
 :sync: jazzy
 
 ```bash
-sudo chmod +x /opt/ros/jazzy/share/followme_turtlebot3_gazebo/scripts/demo_lidar.sh
-/opt/ros/jazzy/share/followme_turtlebot3_gazebo/scripts/demo_lidar.sh
+ros2 launch followme_turtlebot3_gazebo follow_me.launch.py
 ```
 
 :::
@@ -543,28 +450,26 @@ sudo chmod +x /opt/ros/jazzy/share/followme_turtlebot3_gazebo/scripts/demo_lidar
 :sync: humble
 
 ```bash
-sudo chmod +x /opt/ros/humble/share/followme_turtlebot3_gazebo/scripts/demo_lidar.sh
-/opt/ros/humble/share/followme_turtlebot3_gazebo/scripts/demo_lidar.sh
+ros2 launch followme_turtlebot3_gazebo follow_me.launch.py
 ```
 
 :::
 ::::
 
-You will see two panels side-by-side: `Gazebo` GUI on the left and ROS 2 RViz
-display on the right.
+The guide robot changes direction and speed at random intervals within a
+bounded area; there is no prerecorded route. The TurtleBot3 tracks it as soon
+as a target is detected.
 
 ![screenshot_followme_w_gesture_demo](images/follow_me_demo_gazebo_rviz.png)
 
-- The green square robot is a guide robot (namely, the target), which will
-  follow a pre-defined trajectory.
+- The green square robot is the moving guide robot (the target).
 - The gray circular robot is a
   [TurtleBot3](https://emanual.robotis.com/docs/en/platform/turtlebot3/simulation/#gazebo-simulation)
   robot, which will follow the guide robot. TurtleBot3 robot is equipped with a
   2D Lidar and a RealSense Depth Camera. In this demo, the 2D Lidar is
   used as the input topic.
 
-**Both** of the following conditions need to be fulfilled to start the
-TurtleBot3 robot:
+The following condition must be fulfilled to start the TurtleBot3 robot:
 
 - The target (guide robot) will be within the tracking radius of the
   TurtleBot3 robot. Radius is a reconfigurable parameter in:
@@ -572,11 +477,8 @@ TurtleBot3 robot:
 
   In ROS 2 Humble, the file is located at the similar directory path.
 
-- The gesture (visualized in the `/image` topic in ROS 2 rviz2) of the target
-  is `thumbs up`.
-
-The stop condition for the TurtleBot3 robot is fulfilled when **either one** of
-the following conditions are true:
+The TurtleBot3 stops when the target is lost or when an optional activation
+client publishes `false` on `/follow_enabled`.
 
 - The target (guide robot) moves to a distance of more than the tracking radius
   of the TurtleBot3 robot. Radius is a reconfigurable parameter in:
@@ -584,20 +486,16 @@ the following conditions are true:
 
   In ROS 2 Humble, the file is located at the similar directory path.
 
-- The gesture (visualized in the `/image` topic in ROS 2 rviz2) of the target
-  is `thumbs down`.
-
 ### Run Demo with RealSense Camera
 
-Run the following script to launch `Gazebo` simulator and ROS 2 rviz2.
+Launch the same simulation with simulated RealSense depth sensing:
 
 ::::{tab-set}
 :::{tab-item} **Jazzy**
 :sync: jazzy
 
 ```bash
-sudo chmod +x /opt/ros/jazzy/share/followme_turtlebot3_gazebo/scripts/demo_RS.sh
-/opt/ros/jazzy/share/followme_turtlebot3_gazebo/scripts/demo_RS.sh
+ros2 launch followme_turtlebot3_gazebo follow_me.launch.py sensor:=realsense
 ```
 
 :::
@@ -605,8 +503,7 @@ sudo chmod +x /opt/ros/jazzy/share/followme_turtlebot3_gazebo/scripts/demo_RS.sh
 :sync: humble
 
 ```bash
-sudo chmod +x /opt/ros/humble/share/followme_turtlebot3_gazebo/scripts/demo_RS.sh
-/opt/ros/humble/share/followme_turtlebot3_gazebo/scripts/demo_RS.sh
+ros2 launch followme_turtlebot3_gazebo follow_me.launch.py sensor:=realsense
 ```
 
 :::
@@ -740,7 +637,7 @@ pipeline on physical Autonomous Mobile Robots using RealSense depth camera or
 LiDAR inputs.
 
 The sensor publishes point clouds to `/camera/depth/color/points` (RealSense)
-or laser scans to `/scan` (LiDAR). The `adbscan_sub_node` or `adbscan_sub_w_gesture_audio`
+or laser scans to `/scan` (LiDAR). The `adbscan_sub` follower
 subscribes to the corresponding topic, segments clusters using range-adaptive
 parameters, determines the target person's centroid, computes linear and angular
 velocity adjustments, and publishes differential-drive commands to `/cmd_vel` of
@@ -765,7 +662,7 @@ Robotics AI Dev Kit APT repository:
 
 ```bash
 sudo apt update
-sudo apt install ros-jazzy-adbscan-ros2 ros-jazzy-adbscan-ros2-follow-me ros-jazzy-follow-me-interfaces
+sudo apt install ros-jazzy-adbscan-ros2 ros-jazzy-adbscan-ros2-follow-me
 ```
 
 :::
@@ -774,7 +671,7 @@ sudo apt install ros-jazzy-adbscan-ros2 ros-jazzy-adbscan-ros2-follow-me ros-jaz
 
 ```bash
 sudo apt update
-sudo apt install ros-humble-adbscan-ros2 ros-humble-adbscan-ros2-follow-me ros-humble-follow-me-interfaces
+sudo apt install ros-humble-adbscan-ros2 ros-humble-adbscan-ros2-follow-me
 ```
 
 :::
@@ -800,7 +697,7 @@ source /opt/ros/jazzy/setup.bash
 # If running from a built workspace:
 # source install/setup.bash
 
-ros2 launch adbscan_ros2_follow_me play_demo_realsense_launch.py
+ros2 run adbscan_ros2_follow_me adbscan_sub --ros-args --params-file /opt/ros/jazzy/share/adbscan_ros2_follow_me/config/adbscan_sub_RS.yaml
 ```
 
 :::
@@ -812,7 +709,7 @@ source /opt/ros/humble/setup.bash
 # If running from a built workspace:
 # source install/setup.bash
 
-ros2 launch adbscan_ros2_follow_me play_demo_realsense_launch.py
+ros2 run adbscan_ros2_follow_me adbscan_sub --ros-args --params-file /opt/ros/humble/share/adbscan_ros2_follow_me/config/adbscan_sub_RS.yaml
 ```
 
 :::
@@ -826,7 +723,7 @@ For 2D LiDAR based tracking:
 
 ```bash
 source /opt/ros/jazzy/setup.bash
-ros2 launch adbscan_ros2_follow_me play_demo_lidar_launch.py
+ros2 run adbscan_ros2_follow_me adbscan_sub --ros-args --params-file /opt/ros/jazzy/share/adbscan_ros2_follow_me/config/adbscan_sub_2D.yaml
 ```
 
 :::
@@ -835,7 +732,7 @@ ros2 launch adbscan_ros2_follow_me play_demo_lidar_launch.py
 
 ```bash
 source /opt/ros/humble/setup.bash
-ros2 launch adbscan_ros2_follow_me play_demo_lidar_launch.py
+ros2 run adbscan_ros2_follow_me adbscan_sub --ros-args --params-file /opt/ros/humble/share/adbscan_ros2_follow_me/config/adbscan_sub_2D.yaml
 ```
 
 :::

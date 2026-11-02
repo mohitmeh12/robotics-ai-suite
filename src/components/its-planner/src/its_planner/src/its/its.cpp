@@ -144,7 +144,7 @@ void ITS::oneWaySearch(ITS_Shared_State & Q, ITS_Half_State & N1, ITS_Half_State
 
   Q.reversed_terms = N1.is_goal_side;
 
-  // 1. Visit the neigbors of N1 and select the node which is closest to N2
+  // 1. Visit the neighbors of N1 and select the node closest to N2
   for (int i = 0; i < adj_list_[pID].size(); i++) {
     neighbor = adj_list_[pID][i];
     auto pt1 = N1.p.position;

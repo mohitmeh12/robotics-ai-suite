@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright (C) 2025 Intel Corporation
+// Copyright (C) 2026 Intel Corporation
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -81,7 +81,7 @@ private:
 
     publisher_->publish(obstacleArr_msg);
     RCLCPP_INFO(
-      this->get_logger(), "Publishing size(): '%d'",
+      this->get_logger(), "Publishing size(): '%zu'",
       (obstacleArr_msg.obstacles).size());  // (message.obstacles[0].size.z));
     RCLCPP_INFO(this->get_logger(), "Publishing size.x: '%f'", obstacleArr_msg.obstacles[1].size.x);
   }

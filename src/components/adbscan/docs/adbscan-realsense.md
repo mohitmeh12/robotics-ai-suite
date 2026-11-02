@@ -1,5 +1,5 @@
 <!--
-Copyright (C) 2025 Intel Corporation
+Copyright (C) 2026 Intel Corporation
 
 SPDX-License-Identifier: Apache-2.0
 -->
@@ -24,29 +24,26 @@ It outputs to the `obstacle_array` topic of type
 
 ## Install
 
-Install `ros-humble-adbscan-ros2` Deb package from Intel® Robotics AI
-Dev Kit APT repository
+Install `ros-<distro>-adbscan-ros2` Deb package from the Intel® Robotics AI
+Dev Kit APT repository:
 
 > ```sh
 > sudo apt update
-> sudo apt install ros-humble-adbscan-ros2
+> sudo apt install ros-<distro>-adbscan-ros2  # e.g., ros-jazzy-adbscan-ros2 or ros-humble-adbscan-ros2
 > ```
 
-Install the following package with ROS 2 bag files in order to publish
-point cloud data from 2D LIDAR or Intel® RealSense™ camera
-
-> ```sh
-> sudo apt install ros-humble-bagfile-laser-pointcloud
-> ```
+Connect a live Intel RealSense depth camera that publishes the point cloud
+topic configured in `adbscan_sub_RS.yaml`.
 
 ## Run the demo with Intel® RealSense™
 
 > ```sh
-> ros2 launch adbscan_ros2 play_demo_realsense_launch.py
+> ros2 run adbscan_ros2 adbscan_sub --ros-args --params-file "$(ros2 pkg prefix adbscan_ros2)/share/adbscan_ros2/config/adbscan_sub_RS.yaml"
 > ```
 >
-> Expected result: ROS 2 rviz2 starts, and you will see how ADBSCAN
-> interprets Intel® RealSense™ data coming from the ROS 2 bag:
+> The node publishes clusters from the live RealSense point cloud. Start
+> `rviz2` separately to visualize the output. The archived example below
+> illustrates the expected detections:
 >
 > > ::: video
 > > ../../../../videos/adbscan_demo_RS.mp4

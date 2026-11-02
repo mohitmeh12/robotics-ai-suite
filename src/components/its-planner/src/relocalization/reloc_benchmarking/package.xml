@@ -10,7 +10,7 @@ SPDX-License-Identifier: Apache-2.0
 <package format="3">
   <name>reloc_benchmarking</name>
   <version>0.0.0</version>
-  <description>ITS Planner Re-location package</description>
+  <description>ITS Planner relocalization benchmarking package.</description>
   <maintainer email="eci.maintainer@intel.com">ECI Maintainer</maintainer>
   <license>Apache-2.0</license>
 

@@ -15,9 +15,9 @@ The ITS Plugin for the ROS 2 Navigation 2 application plugin is a global
 path planner module that is based on Intelligent sampling and Two-way
 Search (ITS).
 
-ITS is a new search approach based on two-way path planning and
-intelligent sampling, which reduces the compute time by about 20x-30x on
-a 1000 nodes map comparing with the A\* search algorithm. The inputs are
+ITS is a search approach based on two-way path planning and intelligent
+sampling. It reduces compute time by about 20x-30x on a 1,000-node map,
+compared with the A\* search algorithm. The inputs are
 the 2D occupancy grid map, the robot position, and the goal position.
 It does not support continuous replanning.
 
@@ -37,11 +37,11 @@ and a follow path.
 
 1. The ITS planner converts the 2D costmap to either a Probabilistic
     Road Map (PRM) or a Deterministic Road Map (DRM).
-2. The generated roadmap is saved as a txt file which can be reused for
+2. The generated roadmap is saved as a text file that can be reused for
     multiple inquiries.
 3. The ITS planner conducts a two-way search to find a path from the
-    source to the destination. Either the smoothing filter or a catmull
-    spline interpolation can be used to create a smooth and continuous
+    source to the destination. Either a smoothing filter or Catmull spline
+    interpolation can be used to create a smooth, continuous
     path. The generated smooth path is in the form of a ROS 2 navigation
     message type (`nav_msgs::msg`).
 
@@ -50,11 +50,11 @@ For customization options, see [ITS Path Planner Plugin Customization](https://d
 ## Source Code
 
 The source code of this component can be found here:
-[ITS-Planner](https://github.com/open-edge-platform/robotics-ai-suite/tree/main/src/components/its-planner)
+[ITS-Planner](https://github.com/open-edge-platform/edge-ai-suites/tree/main/robotics-ai-suite/components/its-planner)
 
 ## Getting Started
 
-Robotics AI Dev Kit provides a ROS 2 Deb package for the application,
+Robotics AI Dev Kit provides a ROS 2 Debian package for the application,
 supported by the following platforms:
 
 - ROS 2 version: humble or jazzy
@@ -67,10 +67,10 @@ supported by the following platforms:
 - [Install Robotics AI Dev Kit Deb packages](https://developer.robotics.intel.com/development-stack/platform_foundation/getting_started/step_by_step/#6-install-robotics-ai-suite-deb-packages)
 - [Install the Intel® NPU Driver on Intel® Core™ Ultra Processors (if applicable)](https://developer.robotics.intel.com/development-stack/platform_foundation/getting_started/step_by_step/#7-install-the-intel-npu-driver-on-intel-core-ultra-processors)
 
-## Install Deb package
+## Install Debian package
 
-Install the `ros-${ROS_DISTRO}-its-planner` Deb package from the Intel®
-Robotics AI Dev Kit APT repository
+Install the `ros-${ROS_DISTRO}-its-planner` Debian package from the Intel®
+Robotics AI Dev Kit APT repository:
 
 > ``` bash
 > sudo apt install ros-${ROS_DISTRO}-its-planner
@@ -111,8 +111,8 @@ ITS planner run:
 > ```
 
 [!NOTE]
-> The above command opens Gazebo\* and rviz2 applications. Gazebo\*
-> takes a longer time to open (up to a minute) depending on the host\'s
+> The command above opens the Gazebo\* and RViz applications. Gazebo\*
+> can take up to a minute to open, depending on the host's
 > capabilities. Both applications contain the simulated waffle map, and
 > a simulated robot. Initially, the applications are opened in the
 > background, but you can bring them into the foreground, side-by-side,
@@ -121,7 +121,7 @@ ITS planner run:
 a.  Set the robot **2D Pose Estimate** in rviz2:
     1.  Set the initial robot pose by pressing **2D Pose Estimate** in
         rviz2.
-    2.  At the robot estimated location, down-click inside the 2D map.
+    2.  Click the 2D map at the robot's estimated location.
         For reference, use the robot pose as it appears in Gazebo\*.
     3.  Set the orientation by dragging forward from the down-click.
         This also enables ROS 2 navigation.
@@ -139,4 +139,4 @@ c.  Set new destinations for the robot, one at a time.
     ![image](images/goal_achived_gazebo_rviz.png)
 
 d.  To close this, do the following:
-    - Type `Ctrl-c` in the terminal where you did the up command.
+    - Press `Ctrl-C` in the terminal where you launched the command.

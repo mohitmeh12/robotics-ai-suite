@@ -12,7 +12,7 @@ This package provides the Gazebo simulation environments, robot models, and laun
 
 The simulation environment spawns two robots:
 
-1. **Guide Robot (`guide_robot`)**: An airport-style lead vehicle featuring a black-and-yellow checkerboard visual pattern. It follows an automated trajectory to simulate a moving target.
+1. **Guide Robot (`guide_robot`)**: An airport-style lead vehicle featuring a black-and-yellow checkerboard visual pattern. It wanders within a bounded area with randomized motion by default, or accepts manual velocity commands.
 2. **Follower Robot (`turtlebot3_waffle_depth`)**: A simulated TurtleBot3 Waffle equipped with a 2D LiDAR and an Intel® RealSense™ depth camera sensor plugin. It runs the `adbscan_ros2_follow_me` node to detect the guide robot and autonomously follow it.
 
 ## Supported Distributions and Simulators
@@ -27,30 +27,22 @@ The simulation assets are located in `src/followme_turtlebot3_gazebo/models/`:
 - `models/guide_robot`: SDF model and textures for the lead guide vehicle.
 - `models/turtlebot3_waffle_depth`: SDF and URDF descriptions for the follower robot with simulated depth sensor plugins.
 
-## Launch Sequence and Scripts
+## Launch
 
-Simulation scenarios are launched in two coordinated phases:
+With the ROS 2 workspace sourced, start the complete simulation:
 
-### Phase 1: World and Robot Spawning (`*_shared.launch.py`)
+```bash
+ros2 launch followme_turtlebot3_gazebo follow_me.launch.py
+```
 
-- Launches the Gazebo world (`turtlebot3_world`, `turtlebot3_house`, or empty world).
-- Starts robot state publishers for both the guide and follower robots.
-- Establishes ROS-Gazebo bridges for sensor streams (`/scan`, `/camera/depth/color/points`) and motor commands (`/cmd_vel`).
-- Spawns both robots into the simulation.
+The launch includes the matching Gazebo world and bridges, then starts the
+`adbscan_sub` follower and guide controller after robot spawning. The follower
+owns tracking and motion commands. The guide controller uses odometry to stay
+near the start position, changing speed and heading at random intervals.
+For depth sensing, pass `sensor:=realsense`. To control the guide externally,
+pass `guide_motion:=manual` and publish a `geometry_msgs/msg/Twist` to
+`/guide_robot/cmd_vel`. The follower's activation hook is `/follow_enabled`
+(`std_msgs/msg/Bool`); no gesture or speech process is required.
 
-### Phase 2: Perception and Application Stack
-
-- Launches the ADBSCAN clustering node and follow-me control state machine.
-- Optionally starts the gesture recognition node (MediaPipe) and speech recognition node (OpenVINO).
-- Starts the trajectory publisher controlling the guide robot.
-
-### Convenience Runner Scripts
-
-Pre-configured bash scripts in `src/followme_turtlebot3_gazebo/scripts/` manage the full startup sequence, process cleanup, and RViz visualization:
-
-- `demo_lidar.sh`: 2D LiDAR tracking with hand gesture control.
-- `demo_lidar_audio.sh`: 2D LiDAR tracking with hand gesture and OpenVINO voice control.
-- `demo_RS.sh`: Intel RealSense depth camera tracking with hand gesture control.
-- `demo_RS_audio.sh`: Intel RealSense depth camera tracking with gesture and voice control.
-
-For complete execution instructions and dependencies, see the [Follow-Me Application Guide](follow_me_readme.md).
+See the [Follow-Me Application Guide](follow_me_readme.md) for commands and
+startup backend selection.

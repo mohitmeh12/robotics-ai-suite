@@ -10,7 +10,7 @@ SPDX-License-Identifier: Apache-2.0
 <package format="3">
   <name>pose_checker</name>
   <version>0.0.0</version>
-  <description>Relocation pose check package</description>
+  <description>Pose-checking package for the relocalization module.</description>
   <maintainer email="eci.maintainer@intel.com">ECI Maintainer</maintainer>
   <license>Apache-2.0</license>
 

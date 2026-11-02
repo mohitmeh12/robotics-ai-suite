@@ -20,4 +20,4 @@ This directory contains:
   `ros-{distro}-rvc`.
 - `gen_deb.sh` &mdash; helper script to build the `rvc` `.deb` locally.
 
-See [../docs/rvc.md](../../docs/rvc.md) for usage instructions.
+See [../docs/rvc.md](../docs/rvc.md) for usage instructions.

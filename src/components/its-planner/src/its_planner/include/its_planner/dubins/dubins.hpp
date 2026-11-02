@@ -206,12 +206,12 @@ bool isDubinsCollision(
  * @param nodeStepSize        - the step size at which each intermediate node will be generated
  * @param initialHeading      - the start heading of the path, in radians
  * @param finalHeading        - the end heading of the path, in radians
- * @param nodeIndeces         - a vector storing the indeces in the original path corresponding to each intermediate node
+ * @param nodeIndices         - a vector storing the indices in the original path corresponding to each intermediate node
  * @return                    - a vector of intermediate nodes along a path, each containing a position and heading
  */
 vector<std::array<double, 3>> getIntermediateNodes(
   vector<pair<double, double>> & path, const double & pathStepSize, const double & nodeStepSize,
-  const double & initialHeading, const double & finalHeading, vector<int> & nodeIndeces);
+  const double & initialHeading, const double & finalHeading, vector<int> & nodeIndices);
 
 /**
  * Interpolate the original path to include headings and intermediate nodes
@@ -221,26 +221,26 @@ vector<std::array<double, 3>> getIntermediateNodes(
  * @param numSteps            - the number of equally-sized steps to interpolate along the path
  * @param initialHeading      - the start heading of the path, in radians
  * @param finalHeading        - the end heading of the path, in radians
- * @param nodeIndeces         - a vector storing the indeces in the original path corresponding to each node in the new path
+ * @param nodeIndices         - a vector storing the indices in the original path corresponding to each node in the new path
  */
 void interpolateItsPath(
   vector<std::array<double, 3>> & pathWithHeadings, vector<pair<double, double>> & oldPath,
   const int & numSteps, const double & initialHeading, const double & finalHeading,
-  vector<int> & nodeIndeces);
+  vector<int> & nodeIndices);
 
 /**
  * Remove redundant nodes along a sequence of nodes representing a Dubins path
  *
  * @param pathWithHeadings    - the sequence of nodes with positions and headings representing a Dubins path
  * @param dubinsPath          - the original Dubins path, from which pathWithHeadings was derived
- * @param nodeIndeces         - a vector storing the indeces in the original Dubins path corresponding to each node in pathWithHeadings
+ * @param nodeIndices         - a vector storing the indices in the original Dubins path corresponding to each node in pathWithHeadings
  * @param turnRadius          - turning radius of the vehicle (map scale)
  * @param headingTolerance    - the amount the end heading can deviate, in radians
  * @param costmap             - a binary two-dimensional array representing an obstacle map
  */
 vector<pair<double, double>> removeRedundantNodes(
   vector<std::array<double, 3>> & pathWithHeadings, const vector<pair<double, double>> & dubinsPath,
-  const vector<int> & nodeIndeces, const double & turnRadius, const double & headingTolerance,
+  const vector<int> & nodeIndices, const double & turnRadius, const double & headingTolerance,
   const vector<vector<int>> & costmap);
 
 /**

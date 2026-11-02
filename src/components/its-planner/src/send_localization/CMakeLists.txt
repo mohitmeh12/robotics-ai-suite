@@ -92,7 +92,7 @@ ament_export_dependencies(${dependencies})
 
 its_enable_debian_package(
   PACKAGE_BASENAME "its-send-localization"
-  PACKAGE_DESCRIPTION "Send localization package for relocalization module"
+  PACKAGE_DESCRIPTION "Package for sending localization data in the relocalization module"
   BUILD_DEPENDS
     "ros-${ROS_DISTRO}-ament-cmake"
     "ros-${ROS_DISTRO}-ament-cmake-gtest"

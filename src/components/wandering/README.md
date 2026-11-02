@@ -187,7 +187,7 @@ The repository includes a multi-tiered test suite spanning unit and integration 
 - **Fuzz Testing (Google FuzzTest)**:
   Continuous property and fuzz testing targeting core algorithms with AddressSanitizer and UndefinedBehaviorSanitizer instrumentation. See [src/wandering_app/tests/fuzzing/README.md](src/wandering_app/tests/fuzzing/README.md).
 
-For details on `wandering_app` unit, integration, and fuzz tests, see the [Wandering App Test Suite](src/wandering_app/tests/README.md).
+For a complete breakdown of test coverage, test types, and package matrices, see the [Testing Landscape Guide](docs/testing-landscape.md).
 
 ## Development
 

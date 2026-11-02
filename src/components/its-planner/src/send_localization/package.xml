@@ -10,7 +10,7 @@ SPDX-License-Identifier: Apache-2.0
 <package format="3">
   <name>send_localization</name>
   <version>0.0.0</version>
-  <description>ITS Planner send localization package</description>
+  <description>ITS Planner package for sending localization data.</description>
   <maintainer email="eci.maintainer@intel.com">ECI Maintainer</maintainer>
   <license>Apache-2.0</license>
 

@@ -45,7 +45,7 @@ ROS2 AMR Controller to support four Intel® RealSense™ Depth Camera D457.
 ## Source Code
 
 The source code of this component can be found here:
-[Multicamera-Demo](https://github.com/open-edge-platform/robotics-ai-suite/tree/main/src/components/multicam-demo)
+[Multicamera-Demo](https://github.com/open-edge-platform/edge-ai-suites/tree/main/robotics-ai-suite/components/multicam-demo)
 
 ## Axiomtek Robox500 ROS2 AMR Controller Setup
 
@@ -251,5 +251,5 @@ shown in the below picture.
 
     # Reboot the system.
    Edit `GRUB_CMDLINE_LINUX` in the `/etc/default/grub` file.
-
-
+   
+   

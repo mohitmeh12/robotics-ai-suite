@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright (C) 2025 Intel Corporation
+// Copyright (C) 2026 Intel Corporation
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -292,6 +292,23 @@ vector<Obstacle> doDBSCAN(
   LiDAR_data_4D_t * velo_n = reinterpret_cast<LiDAR_data_4D_t *>(p_Data);
   LiDAR_data_3D_t * xyz_n = NULL;
   INT32_t num_points = LiDAR_data_size / sizeof(LiDAR_data_4D_t);
+
+  if (velo_n == nullptr || num_points <= 0) {
+    Obstacle obstacle;
+    obstacle.c_x = 0.0;
+    obstacle.c_y = 0.0;
+    obstacle.c_z = 0.0;
+    obstacle.x = 0.0;
+    obstacle.y = 0.0;
+    obstacle.z = 0.0;
+    obstacles.push_back(obstacle);
+    std::cout << "[IMPORTANT] ADBSCAN is not executed, since number of points is zero after "
+                 "subsampling and filtering. Please try reducing subsampling_ratio parameter or "
+                 "increasing the absolute value of x_filter_back, y_filter_left or y_filter_right "
+                 "parameters to ensure nonzero number of points after subsampling and filtering"
+              << std::endl;
+    return obstacles;
+  }
 
   if (dimension == 3) {
     // Subsample the LiDAR data

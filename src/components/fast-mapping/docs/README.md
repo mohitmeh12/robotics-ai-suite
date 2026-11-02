@@ -66,7 +66,7 @@ flowchart TD
 ## Source Code
 
 The source repository for this component is hosted at:
-[FastMapping on GitHub](https://github.com/open-edge-platform/robotics-ai-suite/tree/main/src/components/fast-mapping)
+[FastMapping on GitHub](https://github.com/open-edge-platform/edge-ai-suites/tree/main/robotics-ai-suite/components/fast-mapping)
 
 ---
 
@@ -321,7 +321,7 @@ ros2 launch fast_mapping fast_mapping.launch.py
 ```
 
 Expected video demonstration:
-[FastMapping Sample Video](https://github.com/open-edge-platform/robotics-ai-suite/blob/main/docs/user-guide/software_references/amr/videos/fast_mapping.mp4)
+[FastMapping Sample Video](https://github.com/open-edge-platform/edge-ai-suites/blob/main/robotics-ai-suite/docs/robotics/videos/fast_mapping.mp4)
 
 ---
 

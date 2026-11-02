@@ -1,0 +1,5 @@
+unique_identifier_msgs/UUID uuid
+float32 score
+geometry_msgs/Point position
+geometry_msgs/Vector3 velocity
+geometry_msgs/Vector3 size

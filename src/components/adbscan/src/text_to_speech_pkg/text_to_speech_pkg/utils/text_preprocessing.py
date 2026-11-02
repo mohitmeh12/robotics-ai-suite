@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: Apache-2.0
-# Copyright (C) 2025 Intel Corporation
+# Copyright (C) 2026 Intel Corporation
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -23,10 +23,10 @@ import re
 from utils.numbers import normalize_numbers
 
 
-_pad = '_'
+_pad = "_"
 _punctuation = "!'(),.:;? "
-_special = '-'
-_letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
+_special = "-"
+_letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
 
 
 # Export all symbols:
@@ -39,26 +39,26 @@ _id_to_symbol = {i: s for i, s in enumerate(symbols)}
 
 
 _abbreviations = [
-    (re.compile('\\b%s\\.' % x[0], re.IGNORECASE), x[1])
+    (re.compile("\\b%s\\." % x[0], re.IGNORECASE), x[1])
     for x in [
-        ('mrs', 'misess'),
-        ('mr', 'mister'),
-        ('dr', 'doctor'),
-        ('st', 'saint'),
-        ('co', 'company'),
-        ('jr', 'junior'),
-        ('maj', 'major'),
-        ('gen', 'general'),
-        ('drs', 'doctors'),
-        ('rev', 'reverend'),
-        ('lt', 'lieutenant'),
-        ('hon', 'honorable'),
-        ('sgt', 'sergeant'),
-        ('capt', 'captain'),
-        ('esq', 'esquire'),
-        ('ltd', 'limited'),
-        ('col', 'colonel'),
-        ('ft', 'fort'),
+        ("mrs", "misess"),
+        ("mr", "mister"),
+        ("dr", "doctor"),
+        ("st", "saint"),
+        ("co", "company"),
+        ("jr", "junior"),
+        ("maj", "major"),
+        ("gen", "general"),
+        ("drs", "doctors"),
+        ("rev", "reverend"),
+        ("lt", "lieutenant"),
+        ("hon", "honorable"),
+        ("sgt", "sergeant"),
+        ("capt", "captain"),
+        ("esq", "esquire"),
+        ("ltd", "limited"),
+        ("col", "colonel"),
+        ("ft", "fort"),
     ]
 ]
 
@@ -70,8 +70,8 @@ def expand_abbreviations(text):
 
 
 def collapse_whitespace(text):
-    _whitespace_re = re.compile(r'\s+')
-    return re.sub(_whitespace_re, ' ', text)
+    _whitespace_re = re.compile(r"\s+")
+    return re.sub(_whitespace_re, " ", text)
 
 
 def text_to_sequence(text):

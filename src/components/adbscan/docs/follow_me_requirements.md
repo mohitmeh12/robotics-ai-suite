@@ -4,52 +4,26 @@ Copyright (C) 2026 Intel Corporation
 SPDX-License-Identifier: Apache-2.0
 -->
 
-# Follow-Me Prerequisites and Dependencies
+# Follow-Me Requirements
 
-This document details the system and Python requirements for running the Follow-Me Gazebo simulation with gesture and audio control.
-
-```bash
-sudo apt install python3-colcon-common-extensions python3-pip
-```
-
-## ROS 2 Jazzy (Ubuntu 24.04)
-
-### System Packages
-
-No additional simulation packages required — Gazebo Harmonic ships with `ros-jazzy-ros-gz*`.
-
-### Python Packages (Gesture only)
+Install ROS 2 Jazzy (Gazebo Harmonic) or Humble (Gazebo Fortress) with
+`ros_gz_sim`, `ros_gz_bridge`, `turtlebot3_gazebo`, `rclpy`, and the ROS message
+dependencies declared in the package manifests. The full simulation cannot
+start without `turtlebot3_gazebo`; verify availability with:
 
 ```bash
-pip3 install -r src/followme_turtlebot3_gazebo/scripts/requirements_jazzy.txt
+ros2 pkg prefix turtlebot3_gazebo
 ```
 
-### Python Packages (Gesture + Audio)
+For a source workspace, install the ROS dependencies and build the packages:
 
 ```bash
-pip3 install -r src/followme_turtlebot3_gazebo/scripts/requirements_jazzy.txt
-pip3 install -r src/followme_turtlebot3_gazebo/scripts/requirements_audio_jazzy.txt
+source /opt/ros/<distro>/setup.bash
+rosdep install --from-paths src --ignore-src -r -y
+make build
+source install/setup.bash
 ```
 
-## ROS 2 Humble (Ubuntu 22.04)
-
-### System Packages (Humble)
-
-```bash
-sudo apt install libprotobuf-lite23 ros-humble-gazebo-* \
-    ros-humble-dynamixel-sdk ros-humble-turtlebot3-msgs \
-    ros-humble-turtlebot3 ros-humble-xacro
-```
-
-### Python Packages (Gesture only, Humble)
-
-```bash
-pip3 install -r src/followme_turtlebot3_gazebo/scripts/requirements_humble.txt
-```
-
-### Python Packages (Gesture + Audio, Humble)
-
-```bash
-pip3 install -r src/followme_turtlebot3_gazebo/scripts/requirements_humble.txt
-pip3 install -r src/followme_turtlebot3_gazebo/scripts/requirements_audio_humble.txt
-```
+No gesture or audio Python environment is required for live following.
+Those interaction adapters are deferred; see the [application guide](follow_me_readme.md)
+for the current activation hook and launch options.

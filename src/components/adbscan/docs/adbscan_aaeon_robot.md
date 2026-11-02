@@ -1,5 +1,5 @@
 <!--
-Copyright (C) 2025 Intel Corporation
+Copyright (C) 2026 Intel Corporation
 
 SPDX-License-Identifier: Apache-2.0
 -->
@@ -37,7 +37,6 @@ around.
 1. To download and install the tutorial run the command below:
 
     ``` bash
-    sudo apt-get install ros-humble-aaeon-adbscan-tutorial-common
     sudo apt-get install ros-humble-aaeon-adbscan-tutorial
     ```
 

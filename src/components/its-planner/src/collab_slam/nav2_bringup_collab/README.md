@@ -12,7 +12,7 @@ This is a very flexible example for nav2 bringup that can be modified for differ
 It is our expectation for an application specific robot system that you're mirroring `nav2_bringup` package and modifying it for your specific maps/robots/bringup needs.
 This is an applied and working demonstration for the default system bringup with many options that can be easily modified.
 
-Usual robot stacks will have a `<robot_name>_nav` package with config/bringup files and this is that for the general case to base a specific robot system off of.
+Typical robot stacks have a `<robot_name>_nav` package with configuration and bringup files. This package provides a general starting point for a specific robot system.
 
 Dynamically composed bringup (based on  [ROS2 Composition](https://docs.ros.org/en/galactic/Tutorials/Composition.html)) is optional for users.
 It can be used to compose all Nav2 nodes in a single process instead of launching these nodes separately,

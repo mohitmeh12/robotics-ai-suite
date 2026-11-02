@@ -46,7 +46,7 @@ install(TARGETS
 
 its_enable_debian_package(
   PACKAGE_BASENAME "its-pose-checker"
-  PACKAGE_DESCRIPTION "Pose checker package part of relocalization module"
+  PACKAGE_DESCRIPTION "Pose-checking package for the relocalization module"
   CHANGELOG_PATH "${CMAKE_CURRENT_SOURCE_DIR}/../${ROS_DISTRO}/debian/changelog"
   BUILD_DEPENDS
     "ros-${ROS_DISTRO}-ament-cmake"
