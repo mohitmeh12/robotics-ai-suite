@@ -1,7 +1,3 @@
-
-=======
-# GMSL Cameras
-
 # GMSL Camera Setup with ACPI SSDT Overlay
 
 This guide describes how to enable GMSL cameras using an ACPI SSDT
@@ -167,14 +163,12 @@ If the package is already installed, run the configuration dialog again with:
 sudo dpkg-reconfigure intel-mipi-gmsl-dkms
 ```
 
-<<<<<<< HEAD
 Answer the configuration dialog as follows:
-=======
 | Code Name | Intel Processor | IPU Version | Deserializer |
 | --- | --- | --- | --- |
 | Panther Lake | Intel® Core™ Ultra Series 3 Processors | IPU7 | `max96724` |
 | Arrow Lake | Intel® Core™ Ultra Series 2 Processors | IPU6 | `max9296`
->>>>>>> f62573a (docs: update hardware cards, badges, and guides (#36))
+
 
 | Prompt | Selection |
 | --- | --- |
@@ -724,15 +718,15 @@ gst-launch-1.0 v4l2src device=/dev/videoN ! 'video/x-raw,format=UYVY,width=1920,
 
 ## Next Steps
 
-<<<<<<< HEAD
 - Use OpenVINO™ to stream GMSL video data into a YOLO-based computer vision
   sample: [OpenVINO™ RealSense AI Demo](../../../../ai_resources/openvino/reference_applications/openvino_multicam_demo.md)
 - Use ROS 2 to ingest camera frames for use in a ROS-powered application:
   [RealSense ROS2 Node](../../reference_applications/realsense-ros2.md)
-=======
+  
   ```sh
   sudo /usr/share/camera/ipu_max9x_bind.sh
   ```
+  
   :::
   ::::
 
@@ -870,4 +864,3 @@ Your camera is now setup. This is a good chance to fetch a live image from your 
 Now that your GMSL camera is properly connected, you can test out using it with various samples or immediately use in your robotics solution:
 - Use OpenVINO to stream GMSL video data into a YOLO-based computer vision sample: [OpenVINO RealSense AI Demo](../../../../ai_resources/openvino/reference_applications/openvino_multicam_demo.md)
 - Use ROS 2 to ingest camera frames for use in a ROS-powered application: [RealSense ROS2 Node](../../reference_applications/realsense-ros2.md)
->>>>>>> f62573a (docs: update hardware cards, badges, and guides (#36))
