@@ -1,14 +1,14 @@
-# OpenVINO™
+# OpenVINO
 
-[OpenVINO™](https://docs.openvino.ai/) is the primary toolkit for optimizing and
+[OpenVINO](https://docs.openvino.ai/) is the primary toolkit for optimizing and
 deploying deep-learning inference in Robotics AI Suite applications. It supports
 models from common frameworks and can target available Intel compute devices.
 
-Use the current [OpenVINO™ installation documentation](https://docs.openvino.ai/canonical/get-started/install-openvino.html) for the selected environment.
+Use the current [OpenVINO installation documentation](https://docs.openvino.ai/canonical/get-started/install-openvino.html) for the selected environment.
 
 ## Software Solutions
 
-OpenVINO™ software solutions cover object detection, segmentation, and
+OpenVINO software solutions cover object detection, segmentation, and
 RealSense camera workflows.
 
 
@@ -19,7 +19,7 @@ RealSense camera workflows.
 :link-type: doc
 :link-alt: clickable cards
 
-Run semantic segmentation on RealSense image data using OpenVINO™ inference.
+Run semantic segmentation on RealSense image data using OpenVINO inference.
 :::
 
 :::{grid-item-card} **Object Detection**
@@ -27,31 +27,31 @@ Run semantic segmentation on RealSense image data using OpenVINO™ inference.
 :link-type: doc
 :link-alt: clickable cards
 
-Deploy object-detection workloads with ROS 2 camera inputs and OpenVINO™ acceleration.
+Deploy object-detection workloads with ROS 2 camera inputs and OpenVINO acceleration.
 :::
 
-:::{grid-item-card} **OpenVINO™ Multi-Camera Demo**
+:::{grid-item-card} **OpenVINO Multi-Camera Demo**
 :link: reference_applications/openvino_multicam_demo
 :link-type: doc
 :link-alt: clickable cards
 
-Process multiple camera streams in a single OpenVINO™-powered demo pipeline.
+Process multiple camera streams in a single OpenVINO-powered demo pipeline.
 :::
 
-:::{grid-item-card} **YOLOv8 with OpenVINO™**
+:::{grid-item-card} **YOLOv8 with OpenVINO**
 :link: reference_applications/yolov8_openvino_tutorial
 :link-type: doc
 :link-alt: clickable cards
 
-Use a YOLOv8 model with OpenVINO™ for accelerated object detection on robotics systems.
+Use a YOLOv8 model with OpenVINO for accelerated object detection on robotics systems.
 :::
 
-:::{grid-item-card} **OpenVINO™ Supported Models**
+:::{grid-item-card} **OpenVINO Supported Models**
 :link: models/index
 :link-type: doc
 :link-alt: clickable cards
 
-Optimize and deploy perception, manipulation, and vision-language-action models with OpenVINO™.
+Optimize and deploy perception, manipulation, and vision-language-action models with OpenVINO.
 :::
 
 :::{grid-item-card} **Pi0.5 Model Optimization**
@@ -77,17 +77,17 @@ OpenVINO™ Physical AI <openvino_physical_ai_runtime>
 
 ## Additional Guidance
 
-- [OpenVINO™ Supported Models](models/index.md) includes reusable perception,
+- [OpenVINO Supported Models](models/index.md) includes reusable perception,
   manipulation, and foundation-model guidance. The workflows require the
     [platform getting-started guide](../../platform_foundation/getting_started.md)
     when used with the Humanoid Toolkit.
 
 ## Benchmarking
 
-Use the upstream [OpenVINO™ Benchmark Tool](https://docs.openvino.ai/canonical/get-started/learn-openvino/openvino-samples/benchmark-tool.html)
-to estimate deep-learning inference throughput and latency on supported Intel
-devices. Install OpenVINO™ and its samples with the [OpenVINO™ sample guidance](https://docs.openvino.ai/canonical/get-started/learn-openvino/openvino-samples/get-started-demos.html)
+Use the upstream [OpenVINO Benchmark Tool](https://docs.openvino.ai/canonical/get-started/learn-openvino/openvino-samples/benchmark-tool.html)
+to estimate deep-learning inference throughput and latency on supported Intel®
+devices. Install OpenVINO and its samples with the [OpenVINO sample guidance](https://docs.openvino.ai/canonical/get-started/learn-openvino/openvino-samples/get-started-demos.html)
 before benchmarking.
 
-Use the same OpenVINO™ version to convert a model and to run inference unless the
+Use the same OpenVINO version to convert a model and to run inference unless the
 model's documentation explicitly supports a different compatibility path.

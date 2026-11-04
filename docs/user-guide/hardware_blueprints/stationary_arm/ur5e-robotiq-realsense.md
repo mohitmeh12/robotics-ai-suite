@@ -6,7 +6,7 @@ The Universal Robots UR5e with Robotiq 2F-85 gripper and RealSense camera provid
 
 | Component | Model / Specification | Purpose |
 | --- | --- | --- |
-| Host Compute | Intel® Core™ Ultra Series 3 platform | Runs ROS 2 Jazzy, AI perception pipeline, MoveIt 2 Servo orchestration, and robot driver nodes |
+| Host Compute | Intel® Core™ Ultra Series 3 Processors-based platform | Runs ROS 2 Jazzy, AI perception pipeline, MoveIt 2 Servo orchestration, and robot driver nodes |
 | Manipulator | Universal Robots UR5e (e-Series, 6-DoF) | Physical manipulation and trajectory execution |
 | End Effector | Robotiq 2F-85 Adaptive Gripper | Two-finger parallel gripping |
 | Camera | RealSense Depth Camera (e.g., D415 / D435 / D455) | Overhead RGB and depth streaming for 2D/3D perception |

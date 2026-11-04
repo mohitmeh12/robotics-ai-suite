@@ -5,6 +5,7 @@
   "scripts": {
     "docusaurus": "docusaurus",
     "start": "docusaurus start",
+    "restart": "node scripts/restart-dev-server.js",
     "prebuild": "make -C .. build",
     "build": "docusaurus build",
     "swizzle": "docusaurus swizzle",

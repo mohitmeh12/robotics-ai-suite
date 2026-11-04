@@ -8,9 +8,9 @@ have been validated for its workflows.
 
 | Intel Processor |
 | --- |
-| Intel® Core™ Ultra Series 3 |
-| Intel® Core™ Series 3 |
-| Intel® Core™ Ultra Series 2 |
+| Intel® Core™ Ultra Series 3 Processors |
+| Intel® Core™ Series 3 Processors |
+| Intel® Core™ Ultra Series 2 Processors |
 
 ## Supported Operating Systems
 

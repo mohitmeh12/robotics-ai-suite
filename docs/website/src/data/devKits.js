@@ -25,7 +25,7 @@ const devKits = [
   {
     id: 'robinson-bay',
     name: 'Robinson Bay',
-    platform: 'Intel® Core™ Ultra Series 3 (Core™ Ultra X7 358H)',
+    platform: 'Intel® Core™ Ultra Series 3 Processors (Core™ Ultra X7 358H)',
     ipu: IPU.IPU75XA,
     interfaces: [INTERFACE.GMSL, INTERFACE.MIPI],
     mipiPhy: PHY.CPHY,

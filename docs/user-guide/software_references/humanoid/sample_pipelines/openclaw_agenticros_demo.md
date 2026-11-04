@@ -6,7 +6,7 @@ SPDX-License-Identifier: Apache-2.0
 
 # OpenClaw + AgenticROS Deployment
 
-This pipeline demonstrates the integration of OpenClaw and AgenticROS AI agent frameworks on Intel® Core™ Ultra Series 3 platform, with LLM/VLM inference served by OpenVINO™ Model Server (OVMS) for controlling JAKA Kargo robot in a Gazebo simulation environment.
+This pipeline demonstrates the integration of OpenClaw and AgenticROS AI agent frameworks on Intel® Core™ Ultra Series 3 Processors-based platform, with LLM/VLM inference served by OpenVINO™ Model Server (OVMS) for controlling JAKA Kargo robot in a Gazebo simulation environment.
 
 ![AgenticROS System Architecture](./assets/images/AgenticROS.png)
 *AgenticROS Architecture: OpenClaw UI → OpenClaw Gateway → AgenticROS Bridge → ROS2 Robot Control*
@@ -17,8 +17,8 @@ This demo showcases:
 
 - **OpenClaw**: AI agent framework providing natural language interface and tool execution
 - **AgenticROS**: AI agent framework that bridges LLM/VLM capabilities with ROS2 robot control
-- **OpenVINO™ Model Server (OVMS)**: Serving Qwen3-VL-8B-Instruct multimodal LLM/VLM on Intel® Core™ Ultra Series 3 Intel® Arc™ graphics
-- **Intel® Core™ Ultra Series 3**: Hardware platform providing XPU acceleration for AI inference
+- **OpenVINO™ Model Server (OVMS)**: Serving Qwen3-VL-8B-Instruct multimodal LLM/VLM on the Intel® Arc™ graphics in Intel® Core™ Ultra Series 3 Processors
+- **Intel® Core™ Ultra Series 3 Processors**: Hardware platform providing XPU acceleration for AI inference
 - **JAKA Kargo Robot**: 6-DOF collaborative robot arm simulation
 - **AWS Small Warehouse**: Gazebo simulation environment
 
@@ -33,7 +33,7 @@ The system enables natural language control of the robot, including:
 ### System Requirements
 
 - Ubuntu 24.04 LTS (tested on Ubuntu 24.04 LTS)
-- Intel's GPUs with OpenVINO™ support (Intel® Core™ Ultra Series 3 Intel® Arc™ graphics, Intel® Arc™ discrete GPUs)
+- Intel's GPUs with OpenVINO™ support (Intel® Arc™ graphics in Intel® Core™ Ultra Series 3 Processors, Intel® Arc™ discrete GPUs)
 - Docker installed and running
 - At least 32GB RAM
 - 100GB free disk space for models and environments
@@ -146,7 +146,7 @@ The `qwen3_vl_openvino_requirements.txt` includes:
 ```bash
 # Set target device for your platform
 # Arc A770 example: GPU.1
-# Intel® Core™ Ultra Series 3 example: GPU.0
+# Example for Intel® Core™ Ultra Series 3 Processors: GPU.0
 export TARGET_DEVICE=GPU.0
 
 # Navigate to models directory

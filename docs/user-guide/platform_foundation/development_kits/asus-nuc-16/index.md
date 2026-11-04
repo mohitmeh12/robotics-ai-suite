@@ -10,7 +10,7 @@
 This guide describes how to set up the ASUS NUC 16 development kit hardware and
 confirm that it powers on and boots correctly.
 
-The kit is powered by **Intel® Core™ Series 3 processors** and combines CPU, GPU,
+The kit is powered by **Intel® Core™ Series 3 Processors** and combines CPU, GPU,
 and an integrated NPU to deliver up to 40 total platform TOPS. It ships as an
 ultra-compact, tool-less, upgradeable unit with up to 64 GB of DDR5-6400 memory
 and support for up to three 4K displays.

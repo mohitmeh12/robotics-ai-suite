@@ -1,11 +1,11 @@
 // Intel silicon shown on docs/hardware/index.md. Two static entries:
-// the on-robot SoC (Intel® Core™ Ultra Series 3) and the discrete inference GPU
+// the on-robot SoC (Intel® Core™ Ultra Series 3 Processors) and the discrete inference GPU
 // (Intel® Data Center GPU Flex Series). Facts only, no fabricated figures.
 
 const silicon = [
   {
     id: 'panther-lake',
-    name: 'Intel® Core™ Ultra Series 3',
+    name: 'Intel® Core™ Ultra Series 3 Processors',
     tier: 'On-robot compute',
     description:
       'A single SoC that combines CPU, Intel® Arc™ graphics, and Intel NPU, so perception, control, and AI inference run on the same chip in a power envelope that fits on a robot.',

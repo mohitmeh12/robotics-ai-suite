@@ -43,7 +43,7 @@ supports every hardware or middleware combination.
 
 | Configuration track | Compute platform and robot | Operating system | ROS 2 | Sensors | Setup guide |
 | --- | --- | --- | --- | --- | --- |
-| Intel® Core™ Ultra Series 3 reference platform | Intel® Core™ Ultra Series 3 platform with an Intel 358H processor and an integrated robot kit | Canonical Ubuntu 24.04 LTS | Jazzy Jalisco | RealSense camera; additional sensors are application dependent | Consult the platform integration guide. |
+| Reference platform with Intel® Core™ Ultra Series 3 Processors | Intel® Core™ Ultra Series 3 Processors-based platform with an Intel 358H processor and an integrated robot kit | Canonical Ubuntu 24.04 LTS | Jazzy Jalisco | RealSense camera; additional sensors are application dependent | Consult the platform integration guide. |
 | Clearpath Jackal | Clearpath Jackal onboard computer | Canonical Ubuntu 24.04 LTS | Jazzy Jalisco | RealSense D435i | [Clearpath Robotics Jackal](clearpath-jackal.md) |
 
 

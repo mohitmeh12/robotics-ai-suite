@@ -6,18 +6,94 @@ prototype and validate robotics workloads. Each kit is documented with its setup
 steps, supported operating systems, and interface configuration so you can bring up
 the hardware and start development quickly.
 
-> [!NOTE]
-> The development kits listed on this page are those that have been tested with the
-> Robotics AI Suite. For a comprehensive catalog of partner Edge AI systems
-> see [Edge AI Partner Spotlight](https://builders.intel.com/ecosystem-engagement/solution-hub/edge-ai-catalog/partner-spotlight?cp=53&cid=202&type=system).
+```{note}
+[![Partnership](../images/partnership.svg)](https://builders.intel.com/ecosystem-engagement/solution-hub/edge-ai-catalog/partner-spotlight?type=system)
+For production grade systems, explore a [catalog of systems offered by our partners](https://builders.intel.com/ecosystem-engagement/solution-hub/edge-ai-catalog/partner-spotlight?type=system).
+```
 
+The development kits below have been tested with the Robotics AI Suite. Select a
+picture to open its setup and configuration guide.
 
-| Development Kit | Silicon | Product Link | Notes |
-| --- | --- | --- | --- |
-| [AAEON CEXD-INTRBL](robinson-bay/index.md) | Intel® Core™ Ultra X7 358H (Intel® Core™ Ultra Series 3) | [link](https://builders.intel.com/ecosystem-engagement/solution-hub/edge-ai-catalog/partner-spotlight/cexd-intrbl-141) | Compute module (100 × 87 mm) with a carrier card breaking out I/O, MIPI CSI, GMSL, and SerDes connectivity. For research and development use only. |
-| [AAEON UP Nexus WCL Edge](up-nexus-wcl-edge/index.md) | Intel® Core™ 7 processor 360 / Core™ 5 processor 320 | [link](https://builders.intel.com/ecosystem-engagement/solution-hub/edge-ai-catalog/partner-spotlight/aaeon-up-nexus-wcl-edge-269) | Fanless edge system with onboard LPDDR5 memory and dual 2.5GbE. No GMSL or MIPI CSI camera connectivity — use USB cameras. For research and development use only. |
-| [AAEON UP WCL Edge](up-wcl-edge/index.md) | Intel® Core™ 7 processor 350 / Core™ 5 processor 320 / Core™ 3 processor 304 | [link](https://www.aaeon.com/en/product/detail/up-systems-up-wcl-edge) | Compact edge system with an active cooler and onboard LPDDR5 memory. No GMSL or MIPI CSI camera connectivity — use USB cameras. For research and development use only. |
-| [ASUS NUC 16](asus-nuc-16/index.md) | Intel® Core™ Series 3 processors | [link](https://builders.intel.com/ecosystem-engagement/solution-hub/edge-ai-catalog/partner-spotlight/asus-nuc-16-338) | Ultra-compact, tool-less upgradeable system with up to 64 GB DDR5-6400 memory, Wi-Fi 7, and dual LAN. No GMSL or MIPI CSI camera connectivity — use USB cameras. For research and development use only. |
+::::{grid} 4
+:gutter: 3
+:class-row: development-kit-grid
+
+:::{grid-item-card}
+:img-top: ../images/aaeon-cexd-intrbl.png
+:class-card: development-kit-card
+:link: robinson-bay/index
+:link-type: doc
+:link-alt: AAEON CEXD-INTRBL setup and configuration guide
+:text-align: center
+
+**AAEON CEXD-INTRBL**
+<br><small>Intel® Core™ Ultra Processors</small>
+:::
+
+:::{grid-item-card}
+:img-top: ../images/aaeon-up-nexus-wcl-edge.png
+:class-card: development-kit-card
+:link: up-nexus-wcl-edge/index
+:link-type: doc
+:link-alt: AAEON UP Nexus WCL Edge setup and configuration guide
+:text-align: center
+
+**AAEON UP Nexus WCL Edge**
+<br><small>Intel® Core™ Processors</small>
+:::
+
+:::{grid-item-card}
+:img-top: ../images/aaeon-up-wcl-edge.png
+:class-card: development-kit-card
+:link: up-wcl-edge/index
+:link-type: doc
+:link-alt: AAEON UP WCL Edge setup and configuration guide
+:text-align: center
+
+**AAEON UP WCL Edge**
+<br><small>Intel® Core™ Processors</small>
+:::
+
+:::{grid-item-card}
+:img-top: ../images/asus-nuc-16.png
+:class-card: development-kit-card
+:link: asus-nuc-16/index
+:link-type: doc
+:link-alt: ASUS NUC 16 setup and configuration guide
+:text-align: center
+
+**ASUS NUC 16**
+<br><small>Intel® Core™ Ultra Processors<br>Intel® Core™ Processors</small>
+:::
+::::
+
+## Supported Operating Systems
+
+The development kits are validated with the following operating systems:
+
+::::{grid} 2
+:gutter: 3
+
+:::{grid-item-card}
+:img-top: ../images/ubuntu-logo.png
+:img-alt: Ubuntu logo
+:class-card: development-kit-card supported-os-card
+:text-align: center
+
+**Canonical Ubuntu**
+<br><small>24.04 LTS (Noble Numbat)<br>64-bit Desktop</small>
+:::
+
+:::{grid-item-card}
+:img-top: ../images/ubuntu-logo.png
+:img-alt: Ubuntu logo
+:class-card: development-kit-card supported-os-card
+:text-align: center
+
+**Canonical Ubuntu**
+<br><small>22.04 LTS (Jammy Jellyfish)<br>64-bit Desktop</small>
+:::
+::::
 
 
 :::{toctree}

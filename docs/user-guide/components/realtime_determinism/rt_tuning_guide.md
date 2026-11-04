@@ -23,7 +23,7 @@ To achieve real-time determinism and utilize the available Intel silicon feature
    | Hyper-Threading | Disabled | Intel Advanced Menu ⟶ CPU Configuration |
    | Intel (VMX) Virtualization | Enabled | Intel Advanced Menu ⟶ CPU Configuration |
    | X2APIC | Enabled | Intel Advanced Menu ⟶ CPU Configuration |
-   | Active SOC-North Efficient-cores | 0 (Intel® Core™ Ultra Series 2 processor)<br>All (Intel® Core™ Ultra Series 3 processor)<sup>*</sup> | Intel Advanced Menu ⟶ CPU Configuration |
+   | Active SOC-North Efficient-cores | 0 (Intel® Core™ Ultra Series 2 Processors)<br>All (Intel® Core™ Ultra Series 3 Processors)<sup>*</sup> | Intel Advanced Menu ⟶ CPU Configuration |
    | Intel(R) SpeedStep | Enabled | Intel Advanced Menu ⟶ Power & Performance ⟶ CPU - Power Management Control |
    | Intel(R) Shift Technology | Enabled | Intel Advanced Menu ⟶ Power & Performance ⟶ CPU - Power Management Control |
    | Intel(R) Turbo Mode | Enabled | Intel Advanced Menu ⟶ Power & Performance ⟶ CPU - Power Management Control |
@@ -72,7 +72,7 @@ To achieve real-time determinism and utilize the available Intel silicon feature
    :::
    ::::
 
-   **Note<sup>*</sup>**: Active SOC-North Efficient-cores can be enabled **all** on Intel® Core™ Ultra Series 3 processor, while still **0** on Intel® Core™ Ultra Series 2 processor under Real-time Optimization.
+   **Note<sup>*</sup>**: Active SOC-North Efficient-cores can be enabled **all** on Intel® Core™ Ultra Series 3 Processors, while still **0** on Intel® Core™ Ultra Series 2 Processors under Real-time Optimization.
 
 ## Modify Boot Parameters
 
@@ -139,7 +139,7 @@ To achieve optimum real-time performance on a target system, specific runtime co
 :::{tab-item} **Ubuntu 24.04**
 :sync: jazzy
 
-![Intel® Core™ Ultra Series 3 RT setup diagram](../../ai_resources/developer_tools/assets/images/ptl_rt_setup.png)
+![Intel® Core™ Ultra Series 3 Processors RT setup diagram](../../ai_resources/developer_tools/assets/images/ptl_rt_setup.png)
 
 :::
 :::{tab-item} **Ubuntu 22.04**

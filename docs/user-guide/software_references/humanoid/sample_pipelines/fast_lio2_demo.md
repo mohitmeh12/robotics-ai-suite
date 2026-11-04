@@ -125,7 +125,7 @@ For `ulhk_4`, the documented baseline is **2.57 m** RMSE (FAST-LIO2 paper,
 arXiv 2107.06829, Table IV — constant across all four non-feature map sizes
 tested there; Point-LIO's own paper reports 2.17 m on this same sequence,
 printed alongside for context only). Intel's own `reproduce_all.sh` run on
-the Intel® Core™ Ultra Series 3 board (see "Reference: running on Intel® Core™ Ultra Series 3" below) measured
+the Intel® Core™ Ultra Series 3 Processors-based board (see "Reference: running on Intel® Core™ Ultra Series 3 Processors" below) measured
 **1.327 m**, comfortably inside the tolerance band. The check is one-sided:
 it passes as long as the freshly measured RMSE does not exceed that
 baseline by more than `RMSE_TOLERANCE_PCT` (20% by default) — a measured
@@ -144,17 +144,17 @@ USE_RVIZ=true ./run_ulhk.sh   # or: USE_RVIZ=true ./reproduce_all.sh
 ```
 
 Run this directly on the target machine's own logged-in Ubuntu desktop
-session (e.g. on the Intel® Core™ Ultra Series 3 board's display, not over plain SSH) — rviz2's
+session (e.g. on the Intel® Core™ Ultra Series 3 Processors-based board's display, not over plain SSH) — rviz2's
 point-cloud rendering needs a real GPU display, so X11-forwarding it over
 SSH is impractical.
 
-### Reference: running on Intel® Core™ Ultra Series 3
+### Reference: running on Intel® Core™ Ultra Series 3 Processors
 
 `run_ulhk.sh` ships a reference core-pinning + frequency-locking setup for
-Intel® Core™ Ultra Series 3 (validated on Core™ Ultra X7 358H: 4 P-cores `cpu0-3` up to 4700
+Intel® Core™ Ultra Series 3 Processors (validated on Core™ Ultra X7 358H: 4 P-cores `cpu0-3` up to 4700
 MHz, 8 E-cores `cpu4-11` up to 3500 MHz, 4 LP-E-cores `cpu12-15` up to 3300
 MHz). Core numbering is specific to this SKU — re-check `lscpu -e` before
-reusing these defaults on a different Intel® Core™ Ultra Series 3 SKU or platform.
+reusing these defaults on a different SKU of Intel® Core™ Ultra Series 3 Processors or on another platform.
 
 | Task | Pinned to | Why |
 | ---- | --------- | --- |
@@ -204,7 +204,7 @@ also in `env.sh`.
 plain CycloneDDS with no iceoryx zero-copy shared-memory transport for
 same-host pub/sub. [scripts/setup_dds_shm.sh](https://github.com/open-edge-platform/robotics-ai-suite/blob/main/src/pipelines/fast-lio2-demo/scripts/setup_dds_shm.sh) adds
 that missing piece — the same DDS transport Bing's own benchmark harness for
-this project (`run_live_benchmark.sh`) uses on Intel® Core™ Ultra Series 3/Orin, for two reasons: (1)
+this project (`run_live_benchmark.sh`) uses on Intel® Core™ Ultra Series 3 Processors and Orin, for two reasons: (1)
 `rmw_fastrtps_cpp`/plain-CycloneDDS + SHM has hit CDR deserialize failures on
 large `PointCloud2` bag replay — silently corrupting or dropping frames — and
 (2) a dedicated DDS domain plus this transport keeps traffic isolated and
@@ -368,9 +368,9 @@ rarely matters. Once it exits, wait a couple of seconds for the last
 odometry messages to land, then stop the recorder (`kill %1` in Terminal B)
 and `fastlio_mapping` (`Ctrl-C` in Terminal A — a clean SIGTERM, not
 `kill -9`, so its destructor flushes any open CSV writer). The
-core-pinning/SCHED_FIFO wrapping `run_ulhk.sh` applies on Intel® Core™ Ultra Series 3 (taskset/chrt)
+core-pinning/SCHED_FIFO wrapping `run_ulhk.sh` applies on Intel® Core™ Ultra Series 3 Processors (taskset/chrt)
 is an optional performance extra, not required for a correctness repro —
-see "Reference: running on Intel® Core™ Ultra Series 3" above if you want that too.
+see "Reference: running on Intel® Core™ Ultra Series 3 Processors" above if you want that too.
 
 **Optional — the CycloneDDS+iceoryx shared-memory transport, by hand**
 (equivalent to `scripts/setup_dds_shm.sh start` — run that script instead if

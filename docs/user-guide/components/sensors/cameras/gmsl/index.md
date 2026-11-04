@@ -1,7 +1,6 @@
-<!--
-SPDX-FileCopyrightText: (C) 2026 Intel Corporation
-SPDX-License-Identifier: Apache-2.0
--->
+
+=======
+# GMSL Cameras
 
 # GMSL Camera Setup with ACPI SSDT Overlay
 
@@ -27,7 +26,7 @@ built at runtime by the `mc-setup.sh` script from the ACPI paths of each
 device, rather than from a static configuration.
 ```
 
-## Validated Cameras
+## Supported GMSL Cameras
 
 ```{include} fragment_camera_table_gmsl.md
 ```
@@ -168,7 +167,14 @@ If the package is already installed, run the configuration dialog again with:
 sudo dpkg-reconfigure intel-mipi-gmsl-dkms
 ```
 
+<<<<<<< HEAD
 Answer the configuration dialog as follows:
+=======
+| Code Name | Intel Processor | IPU Version | Deserializer |
+| --- | --- | --- | --- |
+| Panther Lake | Intel® Core™ Ultra Series 3 Processors | IPU7 | `max96724` |
+| Arrow Lake | Intel® Core™ Ultra Series 2 Processors | IPU6 | `max9296`
+>>>>>>> f62573a (docs: update hardware cards, badges, and guides (#36))
 
 | Prompt | Selection |
 | --- | --- |
@@ -676,8 +682,13 @@ sudo apt-get install gstreamer1.0-tools gstreamer1.0-plugins-good gstreamer1.0-g
 # Depth (UYVY8_1X16)
 gst-launch-1.0 v4l2src device=/dev/videoN ! 'video/x-raw,format=UYVY,width=1280,height=720,framerate=30/1' ! glimagesink
 
+<<<<<<< HEAD
 # RGB (YUYV8_1X16)
 gst-launch-1.0 v4l2src device=/dev/videoN ! 'video/x-raw,format=YUY2,width=1280,height=800,framerate=30/1' ! glimagesink
+=======
+  The following scripts are used for Realsense D457.
+  Execute both in the order given below:
+>>>>>>> f62573a (docs: update hardware cards, badges, and guides (#36))
 
 # IR (Y8_1X8)
 gst-launch-1.0 v4l2src device=/dev/videoN ! 'video/x-raw,format=GRAY8,width=1280,height=720,framerate=30/1' ! glimagesink
@@ -713,7 +724,150 @@ gst-launch-1.0 v4l2src device=/dev/videoN ! 'video/x-raw,format=UYVY,width=1920,
 
 ## Next Steps
 
+<<<<<<< HEAD
 - Use OpenVINO™ to stream GMSL video data into a YOLO-based computer vision
   sample: [OpenVINO™ RealSense AI Demo](../../../../ai_resources/openvino/reference_applications/openvino_multicam_demo.md)
 - Use ROS 2 to ingest camera frames for use in a ROS-powered application:
   [RealSense ROS2 Node](../../reference_applications/realsense-ros2.md)
+=======
+  ```sh
+  sudo /usr/share/camera/ipu_max9x_bind.sh
+  ```
+  :::
+  ::::
+
+### Step 4: Verify Camera
+
+  ::::{tab-set}
+  :::{tab-item} **RealSense**
+  :sync: realsense
+
+  Verify the camera(s) are available in `/dev/video`:
+
+  ```bash
+  ls -la /dev/video-rs-*
+  ```
+
+  You should see output similar to:
+
+  ```console
+  lrwxrwxrwx 1 root root 12 Aug 10 16:39 /dev/video-rs-color-10 -> /dev/video35
+  lrwxrwxrwx 1 root root 12 Aug 10 16:39 /dev/video-rs-depth-10 -> /dev/video33
+  lrwxrwxrwx 1 root root 12 Aug 10 16:39 /dev/video-rs-imu-10 -> /dev/video45
+  lrwxrwxrwx 1 root root 12 Aug 10 16:39 /dev/video-rs-ir-10 -> /dev/video44
+  ```
+
+  :::
+  :::{tab-item} **D3 Embedded**
+  :sync: d3embedded
+
+  Verify the camera(s) are available in `/dev/video`:
+
+  ```bash
+  ls -la /dev/video*
+  ```
+
+  You should see output similar to:
+
+  ```bash
+  lrwxrwxrwx  1 root root      11 Jul 14 15:23 /dev/video-isx031-a-0 -> /dev/video0
+  ```
+
+  :::
+  ::::
+
+### Step 5: Test Camera Data
+
+  Confirm that you can query camera capabilities using `v4l2-ctl`, and stream frame data. Your bound device might use a different label then what is shown:
+
+ ::::{tab-set}
+ :::{tab-item} **RealSense**
+ :sync: realsense
+
+  ```bash
+  sudo v4l2-ctl -d /dev/video-rs-color-10 --stream-mmap --verbose
+  ```
+
+ :::
+ :::{tab-item} **D3 Embedded**
+ :sync: d3embedded
+  
+  ```bash
+  sudo v4l2-ctl -d /dev/video-isx031-1-0 --stream-mmap --verbose
+  ```
+
+ :::
+ ::::
+
+  You should see output similar to:
+
+  ```console
+  VIDIOC_QUERYCAP: ok
+                  VIDIOC_REQBUFS returned 0 (Success)
+                  VIDIOC_CREATE_BUFS returned 0 (Success)
+                  VIDIOC_QUERYBUF returned 0 (Success)
+                  VIDIOC_QUERYBUF returned 0 (Success)
+                  VIDIOC_QUERYBUF returned 0 (Success)
+                  VIDIOC_QUERYBUF returned 0 (Success)
+                  VIDIOC_G_FMT returned 0 (Success)
+                  VIDIOC_QBUF returned 0 (Success)
+                  VIDIOC_QBUF returned 0 (Success)
+                  VIDIOC_QBUF returned 0 (Success)
+                  VIDIOC_QBUF returned 0 (Success)
+                  VIDIOC_STREAMON returned 0 (Success)
+  cap dqbuf: 0 seq:      0 bytesused: 614400 ts: 294.387553 field: None (ts-monotonic, ts-src-eof)
+  cap dqbuf: 1 seq:      1 bytesused: 614400 ts: 294.420904 delta: 33.351 ms field: None (ts-monotonic, ts-src-eof)
+  cap dqbuf: 2 seq:      2 bytesused: 614400 ts: 294.454255 delta: 33.351 ms field: None (ts-monotonic, ts-src-eof)
+  cap dqbuf: 3 seq:      3 bytesused: 614400 ts: 294.487605 delta: 33.350 ms field: None (ts-monotonic, ts-src-eof)
+  cap dqbuf: 0 seq:      4 bytesused: 614400 ts: 294.520956 delta: 33.351 ms fps: 29.98 field: None (ts-monotonic, ts-src-eof)
+  cap dqbuf: 1 seq:      5 bytesused: 614400 ts: 294.554306 delta: 33.350 ms fps: 29.98 field: None (ts-monotonic, ts-src-eof)
+  cap dqbuf: 2 seq:      6 bytesused: 614400 ts: 294.587657 delta: 33.351 ms fps: 29.98 field: None (ts-monotonic, ts-src-eof)
+  cap dqbuf: 3 seq:      7 bytesused: 614400 ts: 294.621007 delta: 33.350 ms fps: 29.98 field: None (ts-monotonic, ts-src-eof)
+  cap dqbuf: 0 seq:      8 bytesused: 614400 ts: 294.654358 delta: 33.351 ms fps: 29.98 field: None (ts-monotonic, ts-src-eof)
+  ```
+
+
+### Step 6: Capture a Live Image
+Your camera is now setup. This is a good chance to fetch a live image from your camera. You can use `ffmpeg` to fetch a frame or display a live vide.
+
+
+ ::::{tab-set}
+ :::{tab-item} **RealSense**
+ :sync: realsense
+
+  Capture a single frame with `ffmpeg` and view it:
+
+  ```bash
+  ffmpeg -f v4l2 -i /dev/video-rs-color-10 -frames:v 1 frame.jpg
+  xdg-open frame.jpg
+  ```
+
+  Or view the live video stream with `ffplay`:
+
+  ```bash
+  ffplay -f v4l2 -i /dev/video-rs-color-10
+  ```
+ :::
+ :::{tab-item} **D3 Embedded**
+ :sync: d3embedded
+  Alternatively, capture a single frame with `ffmpeg` and view it:
+
+  ```bash
+  ffmpeg -f v4l2 -i /dev/video-isx031-a-0 -frames:v 1 frame.jpg
+  xdg-open frame.jpg
+  ```
+
+  Or view the live video stream with `ffplay`:
+
+  ```bash
+  ffplay -f v4l2 -i /dev/video-isx031-a-0
+  ```
+ :::
+ ::::
+
+### Next Steps
+
+Now that your GMSL camera is properly connected, you can test out using it with various samples or immediately use in your robotics solution:
+- Use OpenVINO to stream GMSL video data into a YOLO-based computer vision sample: [OpenVINO RealSense AI Demo](../../../../ai_resources/openvino/reference_applications/openvino_multicam_demo.md)
+- Use ROS 2 to ingest camera frames for use in a ROS-powered application: [RealSense ROS2 Node](../../reference_applications/realsense-ros2.md)
+>>>>>>> f62573a (docs: update hardware cards, badges, and guides (#36))

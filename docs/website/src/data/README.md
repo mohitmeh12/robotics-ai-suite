@@ -42,7 +42,7 @@ The `ipu` / `ipuSupport` codes map to Intel platforms (see `IPU_PLATFORMS` in
 | Code | Platforms |
 |------|-----------|
 | `ipu6epmtl` | Meteor Lake, Arrow Lake |
-| `ipu75xa` | Intel® Core™ Ultra Series 3 |
+| `ipu75xa` | Intel® Core™ Ultra Series 3 Processors |
 | `ipu6ep` | Earlier IPU6EP platforms |
 | `ipu8` | IPU8 platforms |
 
@@ -84,7 +84,7 @@ Add an entry to `devKits.js`:
 {
   id: 'vendor-board',
   name: 'Vendor Board',
-  platform: 'Intel® Core™ Ultra Series 3 (Core Ultra X7)',
+  platform: 'Intel® Core™ Ultra Series 3 Processors (Core Ultra X7)',
   ipu: IPU.IPU75XA,
   interfaces: [INTERFACE.GMSL, INTERFACE.MIPI],
   mipiPhy: PHY.CPHY,                    // PHY of the kit's MIPI connectors

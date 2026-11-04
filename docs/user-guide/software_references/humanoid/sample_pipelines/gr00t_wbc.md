@@ -2,7 +2,7 @@
 
 SONIC is a humanoid behavior foundation model that gives robots a core set of motor skills learned from large-scale human motion data. Rather than building a separate controller for each predefined motion, SONIC treats motion tracking as a scalable training task, enabling a single unified policy to produce natural, whole-body movement and to support a wide range of behaviors — from walking and crawling to teleoperation and multi-modal control.
 
-This repository extends the open-source [GR00T-WholeBodyControl](https://github.com/NVlabs/GR00T-WholeBodyControl.git) and implements a comprehensive optimization of the SONIC whole-body-control (WBC) inference pipeline on the Intel® Core™ Ultra Series 3 platform, including OpenVINO™ inference acceleration, a real-time control thread design, and priority-based Intel NPU scheduling. It demonstrates that the Intel® Core™ Ultra Series 3 platform can meet SONIC WBC's determinism requirements while achieving substantial power savings compared to GPU execution.
+This repository extends the open-source [GR00T-WholeBodyControl](https://github.com/NVlabs/GR00T-WholeBodyControl.git) and implements a comprehensive optimization of the SONIC whole-body-control (WBC) inference pipeline on the Intel® Core™ Ultra Series 3 Processors-based platform, including OpenVINO™ inference acceleration, a real-time control thread design, and priority-based Intel NPU scheduling. It demonstrates that the Intel® Core™ Ultra Series 3 Processors-based platform can meet SONIC WBC's determinism requirements while achieving substantial power savings compared to GPU execution.
 
 ## Prerequisites
 
@@ -17,7 +17,7 @@ For OpenVINO™, this project recommends installing from the archive file. Follo
 
 ## Installation
 
-This project extends the open-source GR00T-WholeBodyControl project and add OpenVINO™ acceleration and SONIC WBC pipeline optimizations for the Intel® Core™ Ultra Series 3 platform. Please get the source code from the Open Edge Platform repo [here](https://github.com/open-edge-platform/robotics-ai-suite/tree/main/src/pipelines/gr00t-wbc). Set up the environment with the following steps.
+This project extends the open-source GR00T-WholeBodyControl project and add OpenVINO™ acceleration and SONIC WBC pipeline optimizations for the Intel® Core™ Ultra Series 3 Processors-based platform. Please get the source code from the Open Edge Platform repo [here](https://github.com/open-edge-platform/robotics-ai-suite/tree/main/src/pipelines/gr00t-wbc). Set up the environment with the following steps.
 
 ### 1. Initialize and patch the submodule
 ```bash

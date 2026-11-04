@@ -179,7 +179,7 @@ The following table indexes navigation packages, tutorials, and end-to-end refer
 | **FAST-LIVO2 Sample Pipeline** | LIVO Reference | Direct visual-inertial-LiDAR fusion, NTU VIRAL validation | [LIVO SLAM: FAST-LIVO2](../../software_references/humanoid/sample_pipelines/fast_livo2_demo.md) |
 | **Point-LIO Sample Pipeline** | LIO Reference | Point-by-point high-frequency estimation for agile platforms | [LIO SLAM: Point-LIO](../../software_references/humanoid/sample_pipelines/point_lio_demo.md) |
 | **Simulating `wandering`** | AMR Simulation | Gazebo Harmonic digital twin, RTAB-Map, Nav2, ADBScan | [Simulating `wandering` in Gazebo](../../software_references/amr/simulation/wandering_sim.md) |
-| **Deploying `wandering`** | Physical Deployment | Intel® Core™ Ultra Series 3 AMR bringup, RealSense, Nav2 | [Deploying `wandering`](../../software_references/amr/deployment/wandering_deploy.md) |
+| **Deploying `wandering`** | Physical Deployment | AMR bringup on Intel® Core™ Ultra Series 3 Processors, RealSense, Nav2 | [Deploying `wandering`](../../software_references/amr/deployment/wandering_deploy.md) |
 
 
 :::{toctree}

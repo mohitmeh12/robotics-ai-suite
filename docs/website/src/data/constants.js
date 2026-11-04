@@ -28,7 +28,7 @@ export const IPU = {
 export const IPU_PLATFORMS = {
   [IPU.IPU6EP]: 'Earlier IPU6EP platforms',
   [IPU.IPU6EPMTL]: 'Meteor Lake, Arrow Lake',
-  [IPU.IPU75XA]: 'Intel® Core™ Ultra Series 3',
+  [IPU.IPU75XA]: 'Intel® Core™ Ultra Series 3 Processors',
   [IPU.IPU8]: 'IPU8 platforms',
 };
 

@@ -98,7 +98,7 @@ The Humanoid Blueprint supports the validated configuration below. It defines
 the hardware and software baseline for the Humanoid Toolkit; use it when
 preparing a system for Humanoid workflows.
 
-### Intel® Core™ Ultra Series 2
+### Intel® Core™ Ultra Series 2 Processors
 
 | Component | Validated configuration |
 | --- | --- |

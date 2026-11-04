@@ -33,7 +33,7 @@ flowchart LR
 ```
 
 Our demonstration pipeline is set up for deployment with a Universal
-Robots UR5e arm, Robotiq 2F-85 gripper, and RealSense camera running Robotics AI Suite. Together, they provide a baseline for
+Robots UR5e arm, Robotiq 2F-85 gripper, and Intel RealSense camera running Robotics AI Suite. Together, they provide a baseline for
 perception-to-motion integration in fixed, structured workspaces.
 Configure the robot network connection, camera-to-world transform, controller,
 gripper, and collision environment for the target workspace. 
@@ -42,7 +42,7 @@ gripper, and collision environment for the target workspace.
 ## Validated Configurations
 
 The Stationary Arm Blueprint supports the configurations below. The reference
-platform targets Intel® Core™ Ultra Series 3 and provides a reusable Robotics AI
+platform targets Intel® Core™ Ultra Series 3 Processors and provides a reusable Robotics AI
 Suite baseline. The UR5e deployment configuration verifies the complete
 vision-guided pick-and-place workflow with the identified hardware and
 software. A configuration is not a guarantee of broad compatibility, but is
@@ -53,7 +53,7 @@ intended as a reference baseline.
 
 :::{grid-item-card} **Stationary Arm Reference Platform**
 
-Intel® Core™ Ultra Series 3 with components selected for the target arm, end
+Intel® Core™ Ultra Series 3 Processors with components selected for the target arm, end
 effector, and workspace, running the Stationary Robotics Toolkit.
 :::
 
@@ -62,8 +62,8 @@ effector, and workspace, running the Stationary Robotics Toolkit.
 :link-type: doc
 :link-alt: clickable cards
 
-Intel® Core™ Ultra Series 3 with a Universal Robots UR5e, Robotiq 2F-85 gripper,
-RealSense camera, and the Stationary Robotics Toolkit.
+Intel® Core™ Ultra Series 3 Processors with a Universal Robots UR5e, Robotiq 2F-85 gripper,
+Intel RealSense camera, and the Stationary Robotics Toolkit.
 :::
 ::::
 

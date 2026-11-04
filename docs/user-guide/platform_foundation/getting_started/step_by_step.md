@@ -41,7 +41,7 @@ This section explains the procedure to configure the APT package manager to use 
    echo -e "Package: *\nPin: origin amrdocs.intel.com\nPin-Priority: 1001" | sudo tee /etc/apt/preferences.d/amr
    ```
 
-5. Configure the APT repository for the Intel® oneAPI Toolkit:
+5. Configure the APT repository for the Intel® oneAPI Base Toolkit:
 
    ```bash
    wget -O- https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB | gpg --dearmor | sudo tee /usr/share/keyrings/oneapi-archive-keyring.gpg > /dev/null

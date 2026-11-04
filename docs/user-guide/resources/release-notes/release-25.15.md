@@ -2,7 +2,7 @@
 
 ## Humanoid Toolkit 25.15
 
-Humanoid Toolkit v25.15 provides necessary software framework, libraries, tools, BKC, tutorials and example codes to facilitate humanoid solution development on Intel® Core™ Ultra Series 2 processors (Arrow Lake-H), It provides Intel Linux LTS kernel v6.12.8 with Preempt-RT, and supports for Canonical Ubuntu OS 22.04, introduces initial support for ROS2 Humble software libraries and tools. It supports many models optimization with OpenVINO™ toolkit, and provides typical workflows and examples including ACT manipulation, ORB-SLAM3, etc.
+Humanoid Toolkit v25.15 provides necessary software framework, libraries, tools, BKC, tutorials and example codes to facilitate humanoid solution development on Intel® Core™ Ultra Series 2 Processors (Arrow Lake-H), It provides Intel Linux LTS kernel v6.12.8 with Preempt-RT, and supports for Canonical Ubuntu OS 22.04, introduces initial support for ROS2 Humble software libraries and tools. It supports many models optimization with OpenVINO™ toolkit, and provides typical workflows and examples including ACT manipulation, ORB-SLAM3, etc.
 
 **New**:
 

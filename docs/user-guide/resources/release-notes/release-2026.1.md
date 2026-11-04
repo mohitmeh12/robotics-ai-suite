@@ -47,7 +47,7 @@ Embodied Intelligence SDK v26.1 introduces new sample pipeline - OpenClaw + Agen
 
 **New**:
 
-- OpenClaw + AgenticROS: The sample pipeline demonstrates the integration of OpenClaw and AgenticROS AI agent frameworks on Intel® Core™ Ultra Series 3 platform, with LLM/VLM inference served by OpenVINO™ Model Server (OVMS) for controlling JAKA Kargo robot in a Gazebo simulation environment.
+- OpenClaw + AgenticROS: The sample pipeline demonstrates the integration of OpenClaw and AgenticROS AI agent frameworks on Intel® Core™ Ultra Series 3 Processors-based platform, with LLM/VLM inference served by OpenVINO™ Model Server (OVMS) for controlling JAKA Kargo robot in a Gazebo simulation environment.
 
 **Enhanced**:
 

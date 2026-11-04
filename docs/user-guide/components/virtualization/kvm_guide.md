@@ -5,11 +5,11 @@ This document demonstrates the steps for setting up an environment that implemen
 
 ## Scenario
 
-The following diagram shows the overall architecture of the Robotics KVM solution on Intel® Core™ Ultra Series 3, organized into three layers: the Intel® Core™ Ultra Series 3 hardware, the Host OS, and the Guest OS. Each of the hardware and Host OS layers is further partitioned into a real-time (RT) domain and a non-real-time (non-RT) domain.
+The following diagram shows the overall architecture of the Robotics KVM solution on Intel® Core™ Ultra Series 3 Processors, organized into three layers: the Intel® Core™ Ultra Series 3 Processors-based hardware, the Host OS, and the Guest OS. Each of the hardware and Host OS layers is further partitioned into a real-time (RT) domain and a non-real-time (non-RT) domain.
 
 ![kvm_solution](./assets/kvm/kvm_arch.png)
 
-- **(Hardware, Intel® Core™ Ultra Series 3 platform)** — Using Intel® Core™ Ultra Series 3 X7 358H as an example: dedicated to the RT domain (4x LPE cores + a NIC), shared by the non-RT domain and Guest OS (4x P cores, 8x E cores, NIC, USB, and NVMe), and passed through to the Guest OS (Intel® Arc™ graphics, Intel NPU, USB controller)
+- **(Hardware, Intel® Core™ Ultra Series 3 Processors-based platform)** — Using the Intel® Core™ Ultra X7 358H (Intel® Core™ Ultra Series 3 Processors) as an example: dedicated to the RT domain (4x LPE cores + a NIC), shared by the non-RT domain and Guest OS (4x P cores, 8x E cores, NIC, USB, and NVMe), and passed through to the Guest OS (Intel® Arc™ graphics, Intel NPU, USB controller)
 - **(Host OS)** — Ubuntu 24.04 with a 6.17 RT kernel. Its RT domain maps to the L1 RT hardware and runs motion control, using the RT NIC to drive external motors over EtherCAT. Its non-RT domain maps to the L1 non-RT hardware and provides KVM + QEMU virtualization services.
 - **(Guest OS)** — Ubuntu 24.04 with a 6.17 kernel. It receives Intel® Arc™ graphics, Intel NPU, and USB controller via KVM passthrough from the Host, and shares net and NVMe with the Host through virtio.
 
