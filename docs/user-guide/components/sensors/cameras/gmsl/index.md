@@ -1,5 +1,3 @@
-# GMSL Cameras
-
 # GMSL Camera Setup with ACPI SSDT Overlay
 
 This guide describes how to enable GMSL cameras using an ACPI SSDT
@@ -600,6 +598,10 @@ nodes from the `mc-setup.sh` configuration summary directly.
 ::::
 
 ## Step 7: Verify Streaming
+
+::::{tab-set}
+:::{tab-item} **RealSense**
+:sync: realsense
 
 Replace `/dev/videoN` with a video node from the `mc-setup.sh` configuration
 summary. The resolution, format and frame rate must match the configured
