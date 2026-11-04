@@ -1,5 +1,3 @@
-
-=======
 # GMSL Cameras
 
 # GMSL Camera Setup with ACPI SSDT Overlay
@@ -167,17 +165,13 @@ If the package is already installed, run the configuration dialog again with:
 sudo dpkg-reconfigure intel-mipi-gmsl-dkms
 ```
 
-<<<<<<< HEAD
-Answer the configuration dialog as follows:
-=======
+    Answer the configuration dialog as follows:
 | Code Name | Intel Processor | IPU Version | Deserializer |
 | --- | --- | --- | --- |
 | Panther Lake | Intel® Core™ Ultra Series 3 Processors | IPU7 | `max96724` |
 | Arrow Lake | Intel® Core™ Ultra Series 2 Processors | IPU6 | `max9296`
->>>>>>> f62573a (docs: update hardware cards, badges, and guides (#36))
-
 | Prompt | Selection |
-| --- | --- |
+| --- | --- |            
 | GMSL deserializer kernel driver | `maxim-serdes` |
 | IPU generation | `ipu7` (detected automatically on supported platforms) |
 | Target hardware board | `max96724-cexd-intrbl` |
@@ -407,6 +401,8 @@ on the system and the selected streams.
 :sync: realsense
 
 **Default streams on all links**
+  The following scripts are used for Realsense D457.
+  Execute both in the order given below:
 
 ```bash
 sudo /usr/share/camera/acpi/mc-setup.sh
@@ -620,75 +616,8 @@ v4l2-ctl -d /dev/videoN --stream-mmap --stream-count=150
 You should see output similar to:
 
 ```console
-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< 29.99 fps
-<<<<<<<<<<<<<<<<<<<<<<<<<<<< 29.99 fps
-<<<<<<<<<<<<<<<<<<<<<<<<<<<< 29.99 fps
-<<<<<<<<<<<<<<<<<<<<<<<<<<<< 29.99 fps
-<<<<<<<<<<<<<<<<<<<<<<<<<<<< 29.99 fps
-```
-
-### Capture a Live Image
-
-::::{tab-set}
-:::{tab-item} **RealSense**
-:sync: realsense
-
-Capture a single frame from the RGB stream with `ffmpeg` and view it:
-
-```bash
-ffmpeg -f v4l2 -i /dev/video-rs-color-0 -frames:v 1 frame.jpg
-xdg-open frame.jpg
-```
-
-Or view the live RGB stream with `ffplay`:
-
-```bash
-ffplay -f v4l2 -i /dev/video-rs-color-0
-```
-
-:::
-:::{tab-item} **D3 Embedded**
-:sync: d3embedded
-
-Capture a single frame with `ffmpeg` and view it:
-
-```bash
-ffmpeg -f v4l2 -i /dev/videoN -frames:v 1 frame.jpg
-xdg-open frame.jpg
-```
-
-Or view the live video stream with `ffplay`:
-
-```bash
-ffplay -f v4l2 -i /dev/videoN
-```
-
-:::
-::::
-
-### Stream with GStreamer
-
-Install the GStreamer tools and plugins:
-
-```bash
-sudo apt-get install gstreamer1.0-tools gstreamer1.0-plugins-good gstreamer1.0-gl
-```
-
-::::{tab-set}
-:::{tab-item} **RealSense**
-:sync: realsense
-
-```bash
-# Depth (UYVY8_1X16)
-gst-launch-1.0 v4l2src device=/dev/videoN ! 'video/x-raw,format=UYVY,width=1280,height=720,framerate=30/1' ! glimagesink
-
-<<<<<<< HEAD
-# RGB (YUYV8_1X16)
-gst-launch-1.0 v4l2src device=/dev/videoN ! 'video/x-raw,format=YUY2,width=1280,height=800,framerate=30/1' ! glimagesink
-=======
   The following scripts are used for Realsense D457.
   Execute both in the order given below:
->>>>>>> f62573a (docs: update hardware cards, badges, and guides (#36))
 
 # IR (Y8_1X8)
 gst-launch-1.0 v4l2src device=/dev/videoN ! 'video/x-raw,format=GRAY8,width=1280,height=720,framerate=30/1' ! glimagesink
@@ -724,12 +653,6 @@ gst-launch-1.0 v4l2src device=/dev/videoN ! 'video/x-raw,format=UYVY,width=1920,
 
 ## Next Steps
 
-<<<<<<< HEAD
-- Use OpenVINO™ to stream GMSL video data into a YOLO-based computer vision
-  sample: [OpenVINO™ RealSense AI Demo](../../../../ai_resources/openvino/reference_applications/openvino_multicam_demo.md)
-- Use ROS 2 to ingest camera frames for use in a ROS-powered application:
-  [RealSense ROS2 Node](../../reference_applications/realsense-ros2.md)
-=======
   ```sh
   sudo /usr/share/camera/ipu_max9x_bind.sh
   ```
@@ -870,4 +793,3 @@ Your camera is now setup. This is a good chance to fetch a live image from your 
 Now that your GMSL camera is properly connected, you can test out using it with various samples or immediately use in your robotics solution:
 - Use OpenVINO to stream GMSL video data into a YOLO-based computer vision sample: [OpenVINO RealSense AI Demo](../../../../ai_resources/openvino/reference_applications/openvino_multicam_demo.md)
 - Use ROS 2 to ingest camera frames for use in a ROS-powered application: [RealSense ROS2 Node](../../reference_applications/realsense-ros2.md)
->>>>>>> f62573a (docs: update hardware cards, badges, and guides (#36))
