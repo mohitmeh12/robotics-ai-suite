@@ -676,13 +676,8 @@ sudo apt-get install gstreamer1.0-tools gstreamer1.0-plugins-good gstreamer1.0-g
 # Depth (UYVY8_1X16)
 gst-launch-1.0 v4l2src device=/dev/videoN ! 'video/x-raw,format=UYVY,width=1280,height=720,framerate=30/1' ! glimagesink
 
-<<<<<<< HEAD
 # RGB (YUYV8_1X16)
 gst-launch-1.0 v4l2src device=/dev/videoN ! 'video/x-raw,format=YUY2,width=1280,height=800,framerate=30/1' ! glimagesink
-=======
-  The following scripts are used for Realsense D457.
-  Execute both in the order given below:
->>>>>>> f62573a (docs: update hardware cards, badges, and guides (#36))
 
 # IR (Y8_1X8)
 gst-launch-1.0 v4l2src device=/dev/videoN ! 'video/x-raw,format=GRAY8,width=1280,height=720,framerate=30/1' ! glimagesink
