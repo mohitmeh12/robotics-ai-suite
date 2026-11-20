@@ -26,7 +26,7 @@ Power on the system.
 
 1. Press **`Del`** key on the keyboard while the system is booting.
 
-   ![Advantech MIO-5381 boot screen](./images/adv-mio-5381-boot.png)
+   ![Advantech MIO-5381 boot screen](../images/adv-mio-5381-boot.png)
 
 2. Enable IPU
 

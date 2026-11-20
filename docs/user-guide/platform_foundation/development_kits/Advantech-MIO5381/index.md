@@ -33,15 +33,31 @@ There is a seperate GMSL AIC **SOM-CM10** This guide will also cover how to powe
 
 ### Step 1. Unbox and inspect
 
-#### TODO
+Expected accessories in the shipment will be the following:
+
+- **MIO-5381**.
+- 2x COM RS-232 cables.
+- Audio Cable.
+- QFCS Active cooler
+- Heatsink Passive.
 
 ### Step 2: ATX Pin
 
-Grab your ATX power supply.
+Grab your ATX power supply. 
 
-1. Find the motherboard power connector. It will look like this ![ATX PSU Motherboard pin](./images/ATX_PSU_Motherboard_pin.png)
+:::caution
+Please make sure that your power supply is not plugged in, and the switch is off
+:::
 
-2. Grab your jumper cables, and attach them to the pins shown on the image below.
+1. Find the motherboard power connector. This is the 24 pin connector.
+
+2. Grab your jumper cables, and attach them to the Green (PS ON) and black (GND) and example is shown in the images below.
+
+  ![ATX 24 pinout](./images/atx-24-pinout.png)
+
+The following image is with the jumper connected.
+
+![ATX Jumper PS-On](./images/atx-jumper-pson.png)
 
 ### Step 3: Connect preipherals.
 
@@ -73,8 +89,6 @@ or wobble.
 :::{toctree}
 :caption: Components
 :hidden:
-
-BIOS Configuration <bios-configuration>
 Supported Operating Systems <supported-operating-systems>
 Interfaces <interfaces/index>
 :::

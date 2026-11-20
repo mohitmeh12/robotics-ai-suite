@@ -127,4 +127,5 @@ AAEON CEXD-INTRBL <robinson-bay/index>
 AAEON UP Nexus WCL Edge <up-nexus-wcl-edge/index>
 AAEON UP WCL Edge <up-wcl-edge/index>
 ASUS NUC 16 <asus-nuc-16/index>
+Advantech MIO-5381 <Advantech-MIO5381/index>
 :::
