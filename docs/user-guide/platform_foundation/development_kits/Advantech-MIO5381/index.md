@@ -84,7 +84,7 @@ or wobble.
 
 ## Next Steps
 
-- **[GMSL] (./interfaces/gmsl.md)** — review the operating systems validated for this kit before installing your OS.
+- **[GMSL](./interfaces/gmsl.md)** — review the operating systems validated for this kit before installing your OS.
 
 :::{toctree}
 :caption: Components
